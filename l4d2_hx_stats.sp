@@ -1,7 +1,6 @@
 /**
- *
  * =============================================================================
- * Copyright 2017 steamcommunity.com/profiles/76561198025355822/
+ * Copyright 2011 - 2019 steamcommunity.com/profiles/76561198025355822/
  * Статистика игроков.
  * 
  * =============================================================================
@@ -16,7 +15,7 @@
  * details.
  *
  * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <www.gnu.org/licenses/>.
+ * this program.  If not, see <www.gnu.org/licenses/>.
  *
  * As a special exception, AlliedModders LLC gives you permission to link the
  * code of this program (as well as its derivative works) to "Half-Life 2," the
@@ -154,7 +153,7 @@ public Action HxTimerConnected(Handle timer, any client)
 	return Plugin_Stop;
 }
 
-public void HxSQLregisterClient(int &client)
+void HxSQLregisterClient(int &client)
 {
 	char sTeamID[24];
 
@@ -283,54 +282,60 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-int HxColorC(int &client, int iPoints)
+float HxColorC(int &client, int iPoints)
 {
-	if (iPoints > 80000)
+	if (IsPlayerAlive(client))
 	{
-		SetEntityRenderColor(client, 0, 0, 0, 252);
-		return 8;
+		if (iPoints > 80000)
+		{
+			SetEntityRenderColor(client, 0, 0, 0, 252);
+			return 2.0;
+		}
+		if (iPoints > 50000)
+		{
+			SetEntityRenderColor(client, 255, 51, 204, 255);
+			return 1.96;
+		}
+		if (iPoints > 20000)
+		{
+			SetEntityRenderColor(client, 164, 79, 25, 255);
+			return 1.87;
+		}
+		if (iPoints > 7000)
+		{
+			SetEntityRenderColor(client, 0, 153, 51, 255);
+			return 1.75;
+		}
+		if (iPoints > 2000)
+		{
+			SetEntityRenderColor(client, 0, 51, 255, 255);
+			return 1.6;
+		}
+		if (iPoints > 500)
+		{
+			SetEntityRenderColor(client, 0, 204, 255, 255);
+			return 1.4;
+		}
 	}
 
-	if (iPoints > 50000)
+	if (iPoints > 100)
 	{
-		SetEntityRenderColor(client, 255, 51, 204, 255);
-		return 7;
-	}
-
-	if (iPoints > 20000)
-	{
-		SetEntityRenderColor(client, 164, 79, 25, 255);
-		return 6;
-	}
-
-	if (iPoints > 7000)
-	{
-		SetEntityRenderColor(client, 0, 153, 51, 255);
-		return 5;
-	}
-
-	if (iPoints > 2000)
-	{
-		SetEntityRenderColor(client, 0, 51, 255, 255);
-		return 4;
-	}
-
-	if (iPoints > 500)
-	{
-		SetEntityRenderColor(client, 0, 204, 255, 255);
-		return 3;
+		return 1.18;
 	}
 
 	if (iPoints > 20)
 	{
-		return 2;
+		return 1.1;
 	}
 
-	return 1;
+	return 1.0;
 }
 
 public Action HxTimerR_18(Handle timer)
 {
+	float f1 = 0.0;
+	float f2 = 0.0;
+
 	int iPoints = 0;
 	int i = 1;
 
@@ -340,14 +345,23 @@ public Action HxTimerR_18(Handle timer)
 		{
 			if (!IsFakeClient(i))
 			{
-				if (IsPlayerAlive(i))
-				{
-					iPoints = ig_real[i][HX_POINTS];
-					HxColorC(i, iPoints);
-				}
+				iPoints = ig_real[i][HX_POINTS];
+				f1 += HxColorC(i, iPoints);
+				f2 += 1.0;
 			}
 		}
 		i += 1;
+	}
+
+	if (FindConVar("l4d2_hx_difficulty"))
+	{
+		if (f1 > 0.0)
+		{
+			if (f2 > 0.0)
+			{
+				SetConVarFloat(FindConVar("l4d2_hx_difficulty"), (f1/f2) , false, false);
+			}
+		}
 	}
 
 	return Plugin_Stop;
@@ -381,13 +395,13 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 				GetEventString(event, "victimname", sg_buf3, sizeof(sg_buf3)-1);
 
 				if (sg_buf3[0] == 'I')
-				{		/* Infected */
+				{	/* Infected */
 					ig_temp[iAttacker][HX_INFECTED] += 1;
 					return Plugin_Continue;
 				}
 
 				if (sg_buf3[0] == 'B')
-				{		/* Boomer */
+				{	/* Boomer */
 					ig_temp[iAttacker][HX_BOOMER] += 1;
 					ig_temp[iAttacker][HX_POINTS] += 1;
 					PrintToChat(iAttacker, "\x05+1");
@@ -395,7 +409,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 				}
 
 				if (sg_buf3[0] == 'J')
-				{		/* Jockey */
+				{	/* Jockey */
 					ig_temp[iAttacker][HX_JOCKEY] += 1;
 					ig_temp[iAttacker][HX_POINTS] += 1;
 					PrintToChat(iAttacker, "\x05+1");
@@ -405,11 +419,11 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 				if (sg_buf3[0] == 'S')
 				{
 					if (sg_buf3[1] == 'm')
-					{		/* Smoker */
+					{	/* Smoker */
 						ig_temp[iAttacker][HX_SMOKER] += 1;
 					}
 					if (sg_buf3[1] == 'p')
-					{		/* Spitter */
+					{	/* Spitter */
 						ig_temp[iAttacker][HX_SPITTER] += 1;
 					}
 
@@ -419,7 +433,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 				}
 
 				if (sg_buf3[0] == 'H')
-				{		/* Hunter */
+				{	/* Hunter */
 					ig_temp[iAttacker][HX_HUNTER] += 1;
 					ig_temp[iAttacker][HX_POINTS] += 1;
 					PrintToChat(iAttacker, "\x05+1");
@@ -427,7 +441,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 				}
 
 				if (sg_buf3[0] == 'C')
-				{		/* Charger */
+				{	/* Charger */
 					ig_temp[iAttacker][HX_CHARGER] += 1;
 					ig_temp[iAttacker][HX_POINTS] += 1;
 					PrintToChat(iAttacker, "\x05+1");
@@ -435,7 +449,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 				}
 
 				if (sg_buf3[0] == 'T')
-				{		/* Tank */
+				{	/* Tank */
 					ig_temp[iAttacker][HX_TANK] += 1;
 					ig_temp[iAttacker][HX_POINTS] += 10;
 					PrintToChat(iAttacker, "\x05+10");
@@ -443,7 +457,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 				}
 
 				if (sg_buf3[0] == 'W')
-				{		/* Witch */
+				{	/* Witch */
 					ig_temp[iAttacker][HX_WITCH] += 1;
 					ig_temp[iAttacker][HX_POINTS] += 1;
 					PrintToChat(iAttacker, "\x05+1");
