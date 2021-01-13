@@ -179,7 +179,7 @@ void HxSQLregisterClient(int &client)
 		DBResultSet hQuery = SQL_Query(hg_db, sg_query1);
 		if (hQuery)
 		{
-			if (!SQL_FetchRow(hQuery))
+			if (!hQuery.FetchRow())
 			{
 				sg_query1[0] = '\0';
 				Format(sg_query1, sizeof(sg_query1)-1, "INSERT IGNORE INTO `l4d2_stats` SET `Steamid` = '%s'", sTeamID);
@@ -191,17 +191,17 @@ void HxSQLregisterClient(int &client)
 			}
 			else
 			{
-				ig_real[client][HX_POINTS]   = SQL_FetchInt(hQuery, 0);
-				ig_real[client][HX_TIME]     = SQL_FetchInt(hQuery, 1);
-				ig_real[client][HX_BOOMER]   = SQL_FetchInt(hQuery, 2);
-				ig_real[client][HX_CHARGER]  = SQL_FetchInt(hQuery, 3);
-				ig_real[client][HX_HUNTER]   = SQL_FetchInt(hQuery, 4);
-				ig_real[client][HX_INFECTED] = SQL_FetchInt(hQuery, 5);
-				ig_real[client][HX_JOCKEY]   = SQL_FetchInt(hQuery, 6);
-				ig_real[client][HX_SMOKER]   = SQL_FetchInt(hQuery, 7);
-				ig_real[client][HX_SPITTER]  = SQL_FetchInt(hQuery, 8);
-				ig_real[client][HX_TANK]     = SQL_FetchInt(hQuery, 9);
-				ig_real[client][HX_WITCH]    = SQL_FetchInt(hQuery, 10);
+				ig_real[client][HX_POINTS]   = hQuery.FetchInt(0);
+				ig_real[client][HX_TIME]     = hQuery.FetchInt(1);
+				ig_real[client][HX_BOOMER]   = hQuery.FetchInt(2);
+				ig_real[client][HX_CHARGER]  = hQuery.FetchInt(3);
+				ig_real[client][HX_HUNTER]   = hQuery.FetchInt(4);
+				ig_real[client][HX_INFECTED] = hQuery.FetchInt(5);
+				ig_real[client][HX_JOCKEY]   = hQuery.FetchInt(6);
+				ig_real[client][HX_SMOKER]   = hQuery.FetchInt(7);
+				ig_real[client][HX_SPITTER]  = hQuery.FetchInt(8);
+				ig_real[client][HX_TANK]     = hQuery.FetchInt(9);
+				ig_real[client][HX_WITCH]    = hQuery.FetchInt(10);
 
 				CreateTimer(6.0, HxTimerConnected, client, TIMER_FLAG_NO_MAPCHANGE);
 			}
@@ -383,16 +383,16 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 
 public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
-	int iAttacker = GetClientOfUserId(GetEventInt(event, "attacker"));	/* User ID который убил */
+	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));	/* User ID который убил */
 	if (iAttacker)
 	{
-		int iUserid = GetClientOfUserId(GetEventInt(event, "userid"));	/* User ID который умер */
+		int iUserid = GetClientOfUserId(event.GetInt("userid"));	/* User ID который умер */
 		if (iAttacker != iUserid)
 		{
 			if (!IsFakeClient(iAttacker))
 			{
 				sg_buf3[0] = '\0';
-				GetEventString(event, "victimname", sg_buf3, sizeof(sg_buf3)-1);
+				event.GetString("victimname", sg_buf3, sizeof(sg_buf3)-1);
 
 				if (sg_buf3[0] == 'I')
 				{	/* Infected */
@@ -683,10 +683,10 @@ public Action CMD_top(int client, int args)
 				DBResultSet hQuery = SQL_Query(hg_db, sg_query4);
 				if (hQuery)
 				{
-					while (SQL_FetchRow(hQuery))
+					while (hQuery.FetchRow())
 					{
-						SQL_FetchString(hQuery, 0, sName, sizeof(sName)-8);
-						iPoints = SQL_FetchInt(hQuery, 1);
+						hQuery.FetchString(0, sName, sizeof(sName)-8);
+						iPoints = hQuery.FetchInt(1);
 
 						iNum += 1;
 						Format(sBuffer, sizeof(sBuffer)-1, "%d_ %s  %d Points", iNum, sName, iPoints);
