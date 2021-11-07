@@ -721,4 +721,6 @@ public Action HxTimerInfinite18(Handle timer)
 		}
 		i += 1;
 	}
+
+	return Plugin_Continue;
 }
