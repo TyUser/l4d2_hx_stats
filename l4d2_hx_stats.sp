@@ -1,32 +1,12 @@
-/**
- * =============================================================================
- * Copyright 2011 - 2019 steamcommunity.com/profiles/76561198025355822/
+// SPDX-License-Identifier: GPL-3.0-only
+/*
+ *
+ * Copyright 2011 - 2022 steamcommunity.com/profiles/76561198025355822/
+ * native int HxGetClientPoints(int client); // Получить поинты игрока в стороннем плагине
  * Статистика игроков.
- * 
- * =============================================================================
- *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, version 3.0, as published by the
- * Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program.  If not, see <www.gnu.org/licenses/>.
- *
- * As a special exception, AlliedModders LLC gives you permission to link the
- * code of this program (as well as its derivative works) to "Half-Life 2," the
- * "Source Engine," the "SourcePawn JIT," and any Game MODs that run on software
- * by the Valve Corporation.  You must obey the GNU General Public License in
- * all respects for all other code used.  Additionally, AlliedModders LLC grants
- * this exception to all derivative works.  AlliedModders LLC defines further
- * exceptions, found in LICENSE.txt (as of this writing, version JULY-31-2007),
- * or <www.sourcemod.net/license.php>.
  *
 */
+
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
@@ -65,12 +45,12 @@ CREATE TABLE IF NOT EXISTS `l4d2_stats` (\
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;\
 "
 
-char sg_query1[640];
-char sg_query2[640];
-char sg_query3[640];
-char sg_query4[312];
+char sg_query1[1024];
+char sg_query2[1024];
+char sg_query3[1024];
+char sg_query4[1024];
 
-char sg_buf1[312];
+char sg_buf1[512];
 char sg_buf2[128];
 char sg_buf3[40];
 
@@ -84,9 +64,15 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.0",
+	version = "1.1",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	CreateNative("HxGetClientPoints", __HxGetPoints);
+	return APLRes_Success;
+}
 
 public void OnPluginStart()
 {
@@ -103,6 +89,14 @@ public void OnPluginStart()
 
 	CreateTimer(60.0, HxTimerInfinite18, _, TIMER_REPEAT);
 	hg_db = null;
+}
+
+public void HxDBvoid(Handle owner, Handle hndl, const char [] error, any data)
+{
+	if (error[0])
+	{
+		LogError("SQL Error: %s", error);
+	}
 }
 
 public void OnConfigsExecuted()
@@ -147,66 +141,60 @@ void HxClean(int &client)
 	ig_real[client][HX_WITCH]    = 0;
 }
 
+public int __HxGetPoints(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	if (client > 0)
+	{
+		if (client < 32)
+		{
+			return ig_real[client][HX_POINTS];
+		}
+	}
+
+	return 0;
+}
+
 public Action HxTimerConnected(Handle timer, any client)
 {
 	CMD_rank(client, 0);
 	return Plugin_Stop;
 }
 
-void HxSQLregisterClient(int &client)
+public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, any data)
 {
-	char sTeamID[24];
-
-	if (hg_db)
+	int client = data;
+	if (IsClientInGame(client))
 	{
-		sg_query1[0] = '\0';
-		GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
-		Format(sg_query1, sizeof(sg_query1)-1
-		 , "SELECT \
-			Points, \
-			Time1, \
-			Boomer, \
-			Charger, \
-			Hunter, \
-			Infected, \
-			Jockey, \
-			Smoker, \
-			Spitter, \
-			Tank, \
-			Witch \
-			FROM `l4d2_stats` WHERE `Steamid` = '%s'", sTeamID);
-
-		DBResultSet hQuery = SQL_Query(hg_db, sg_query1);
-		if (hQuery)
+		if (hndl)
 		{
-			if (!hQuery.FetchRow())
+			if (SQL_FetchRow(hndl))
 			{
-				sg_query1[0] = '\0';
-				Format(sg_query1, sizeof(sg_query1)-1, "INSERT IGNORE INTO `l4d2_stats` SET `Steamid` = '%s'", sTeamID);
-				DBResultSet hQuery2 = SQL_Query(hg_db, sg_query1);
-				if (hQuery2)
-				{
-					delete hQuery2;
-				}
+				ig_real[client][HX_POINTS]   = SQL_FetchInt(hndl, 0);
+				ig_real[client][HX_TIME]     = SQL_FetchInt(hndl, 1);
+				ig_real[client][HX_BOOMER]   = SQL_FetchInt(hndl, 2);
+				ig_real[client][HX_CHARGER]  = SQL_FetchInt(hndl, 3);
+				ig_real[client][HX_HUNTER]   = SQL_FetchInt(hndl, 4);
+				ig_real[client][HX_INFECTED] = SQL_FetchInt(hndl, 5);
+				ig_real[client][HX_JOCKEY]   = SQL_FetchInt(hndl, 6);
+				ig_real[client][HX_SMOKER]   = SQL_FetchInt(hndl, 7);
+				ig_real[client][HX_SPITTER]  = SQL_FetchInt(hndl, 8);
+				ig_real[client][HX_TANK]     = SQL_FetchInt(hndl, 9);
+				ig_real[client][HX_WITCH]    = SQL_FetchInt(hndl, 10);
+
+				CreateTimer(7.0, HxTimerConnected, client, TIMER_FLAG_NO_MAPCHANGE);
 			}
 			else
 			{
-				ig_real[client][HX_POINTS]   = hQuery.FetchInt(0);
-				ig_real[client][HX_TIME]     = hQuery.FetchInt(1);
-				ig_real[client][HX_BOOMER]   = hQuery.FetchInt(2);
-				ig_real[client][HX_CHARGER]  = hQuery.FetchInt(3);
-				ig_real[client][HX_HUNTER]   = hQuery.FetchInt(4);
-				ig_real[client][HX_INFECTED] = hQuery.FetchInt(5);
-				ig_real[client][HX_JOCKEY]   = hQuery.FetchInt(6);
-				ig_real[client][HX_SMOKER]   = hQuery.FetchInt(7);
-				ig_real[client][HX_SPITTER]  = hQuery.FetchInt(8);
-				ig_real[client][HX_TANK]     = hQuery.FetchInt(9);
-				ig_real[client][HX_WITCH]    = hQuery.FetchInt(10);
-
-				CreateTimer(6.0, HxTimerConnected, client, TIMER_FLAG_NO_MAPCHANGE);
+				char sTeamID[24];
+				sg_query1[0] = '\0';
+				if (hg_db)
+				{
+					GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
+					Format(sg_query1, sizeof(sg_query1)-1, "INSERT IGNORE INTO `l4d2_stats` SET `Steamid` = '%s'", sTeamID);
+					SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0);
+				}
 			}
-
-			delete hQuery;
 		}
 	}
 }
@@ -215,7 +203,28 @@ public Action HxTimerClientPost(Handle timer, any client)
 {
 	if (IsClientInGame(client))
 	{
-		HxSQLregisterClient(client);
+		if (hg_db)
+		{
+			char sTeamID[24];
+			sg_query1[0] = '\0';
+			GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
+			Format(sg_query1, sizeof(sg_query1)-1
+			 , "SELECT \
+				Points, \
+				Time1, \
+				Boomer, \
+				Charger, \
+				Hunter, \
+				Infected, \
+				Jockey, \
+				Smoker, \
+				Spitter, \
+				Tank, \
+				Witch \
+				FROM `l4d2_stats` WHERE `Steamid` = '%s'", sTeamID);
+
+			SQL_TQuery(hg_db, HxSQLregisterClient, sg_query1, client);
+		}
 	}
 
 	return Plugin_Stop;
@@ -270,11 +279,7 @@ public void OnClientDisconnect(int client)
 				, ig_temp[client][HX_WITCH]
 				, sTeamID);
 
-				DBResultSet hQuery = SQL_Query(hg_db, sg_query2);
-				if (hQuery)
-				{
-					delete hQuery;
-				}
+				SQL_TQuery(hg_db, HxDBvoid, sg_query2, 0);
 			}
 		}
 
@@ -282,61 +287,47 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-float HxColorC(int &client, int iPoints)
+int HxColorC(int &client, int iPoints)
 {
 	if (IsPlayerAlive(client))
 	{
 		if (iPoints > 80000)
 		{
 			SetEntityRenderColor(client, 0, 0, 0, 252);
-			return 2.0;
+			return 1;
 		}
 		if (iPoints > 50000)
 		{
 			SetEntityRenderColor(client, 255, 51, 204, 255);
-			return 1.96;
+			return 1;
 		}
 		if (iPoints > 20000)
 		{
 			SetEntityRenderColor(client, 164, 79, 25, 255);
-			return 1.87;
+			return 1;
 		}
 		if (iPoints > 7000)
 		{
 			SetEntityRenderColor(client, 0, 153, 51, 255);
-			return 1.75;
+			return 1;
 		}
 		if (iPoints > 2000)
 		{
 			SetEntityRenderColor(client, 0, 51, 255, 255);
-			return 1.6;
+			return 1;
 		}
 		if (iPoints > 500)
 		{
 			SetEntityRenderColor(client, 0, 204, 255, 255);
-			return 1.4;
+			return 1;
 		}
 	}
 
-	if (iPoints > 100)
-	{
-		return 1.18;
-	}
-
-	if (iPoints > 20)
-	{
-		return 1.1;
-	}
-
-	return 1.0;
+	return 1;
 }
 
 public Action HxTimerR_18(Handle timer)
 {
-	float f1 = 0.0;
-	float f2 = 0.0;
-
-	int iPoints = 0;
 	int i = 1;
 
 	while (i <= MaxClients)
@@ -345,23 +336,10 @@ public Action HxTimerR_18(Handle timer)
 		{
 			if (!IsFakeClient(i))
 			{
-				iPoints = ig_real[i][HX_POINTS];
-				f1 += HxColorC(i, iPoints);
-				f2 += 1.0;
+				HxColorC(i, ig_real[i][HX_POINTS]);
 			}
 		}
 		i += 1;
-	}
-
-	if (FindConVar("l4d2_hx_difficulty"))
-	{
-		if (f1 > 0.0)
-		{
-			if (f2 > 0.0)
-			{
-				SetConVarFloat(FindConVar("l4d2_hx_difficulty"), (f1/f2) , false, false);
-			}
-		}
 	}
 
 	return Plugin_Stop;
@@ -508,13 +486,14 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 	char sTeamID[24];
 	int i = 1;
 
-	while (i <= MaxClients)
+	if (hg_db)
 	{
-		if (IsClientInGame(i))
+		Transaction Txn = SQL_CreateTransaction();
+		while (i <= MaxClients)
 		{
-			if (!IsFakeClient(i))
+			if (IsClientInGame(i))
 			{
-				if (hg_db)
+				if (!IsFakeClient(i))
 				{
 					sName[0] = '\0';
 					sg_query3[0] = '\0';
@@ -540,32 +519,31 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 						Witch = Witch + %d \
 						WHERE `Steamid` = '%s'"
 
-						, sName
-						, ig_temp[i][HX_POINTS]
-						, ig_temp[i][HX_TIME]
-						, GetTime()
-						, ig_temp[i][HX_BOOMER]
-						, ig_temp[i][HX_CHARGER]
-						, ig_temp[i][HX_HUNTER]
-						, ig_temp[i][HX_INFECTED]
-						, ig_temp[i][HX_JOCKEY]
-						, ig_temp[i][HX_SMOKER]
-						, ig_temp[i][HX_SPITTER]
-						, ig_temp[i][HX_TANK]
-						, ig_temp[i][HX_WITCH]
-						, sTeamID);
+					, sName
+					, ig_temp[i][HX_POINTS]
+					, ig_temp[i][HX_TIME]
+					, GetTime()
+					, ig_temp[i][HX_BOOMER]
+					, ig_temp[i][HX_CHARGER]
+					, ig_temp[i][HX_HUNTER]
+					, ig_temp[i][HX_INFECTED]
+					, ig_temp[i][HX_JOCKEY]
+					, ig_temp[i][HX_SMOKER]
+					, ig_temp[i][HX_SPITTER]
+					, ig_temp[i][HX_TANK]
+					, ig_temp[i][HX_WITCH]
+					, sTeamID);
 
-					DBResultSet hQuery = SQL_Query(hg_db, sg_query3);
-					if (hQuery)
-					{
-						delete hQuery;
-					}
+					Txn.AddQuery(sg_query3);
 				}
 			}
+
+			HxClean(i);
+			i += 1;
 		}
 
-		HxClean(i);
-		i += 1;
+		SQL_ExecuteTransaction(hg_db, Txn, _, _, _, DBPrio_High);
+		Txn = null;
 	}
 
 	if (hg_db)
@@ -580,11 +558,7 @@ public Action CMD_sqlcreate(int client, int args)
 	{
 		if (hg_db)
 		{
-			DBResultSet hQuery = SQL_Query(hg_db, HX_CREATE_TABLE);
-			if (hQuery)
-			{
-				delete hQuery;
-			}
+			SQL_TQuery(hg_db, HxDBvoid, HX_CREATE_TABLE, 0);
 		}
 	}
 
@@ -662,7 +636,7 @@ public Action CMD_rank(int client, int args)
 
 public Action CMD_top(int client, int args)
 {
-	char sBuffer[64];
+	char sBuffer[128];
 	char sName[32];
 
 	int iPoints = 0;
