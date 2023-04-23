@@ -3,7 +3,7 @@ if (!defined('HX_STATS')) {
 	exit();
 }
 
-function hx_get_string($id): string
+function hx_get_string(string $id): string
 {
 	if (isset($_GET[$id])) {
 		$s = preg_replace('#[^a-zA-Z0-9:_]#', '', $_GET[$id]);
@@ -12,19 +12,19 @@ function hx_get_string($id): string
 	return '';
 }
 
-function hx_get_cache($s, $i): int
+function hx_get_cache(string $s, int $i): bool
 {
 	if (file_exists($s)) {
 		$i2 = filemtime($s);
 		if ((time() - $i) < $i2) {
-			return 1;
+			return true;
 		}
 	}
 
-	return 0;
+	return false;
 }
 
-function hx_steam($s): string
+function hx_steam(string $s): string
 {
 	$parts = explode(':', str_replace('STEAM_', '', $s));
 	$iS = $parts[1] + 7960265728 + ($parts[2] * 2);
@@ -35,7 +35,7 @@ class Class_mysqli
 {
 	private $hSQL;
 
-	public function __construct($host, $user, $pass, $db)
+	public function __construct(string $host, string $user, string $pass, string $db)
 	{
 		$this -> hSQL = new mysqli($host, $user, $pass, $db);
 		$this -> hSQL -> set_charset('utf8');
@@ -46,21 +46,21 @@ class Class_mysqli
 		$this -> hSQL -> close();
 	}
 
-	public function query_array($Buf): ?array
+	public function query_array($query): ?array
 	{
-		$aRow = array();
+		$resultArray = array();
 		$i = 0;
 
-		$h = $this -> hSQL -> query($Buf);
-		if ($h) {
-			while ($aRow[$i] = $h -> fetch_assoc()) {
+		$result = $this -> hSQL -> query($query);
+		if ($result) {
+			while ($resultArray[$i] = $result -> fetch_assoc()) {
 				$i += 1;
 			}
-			$h -> free();
+			$result -> free();
 		}
 		if ($i) {
-			return $aRow;
+			return $resultArray;
 		}
-		return NULL;
+		return null;
 	}
 }
