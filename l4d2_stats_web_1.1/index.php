@@ -63,7 +63,7 @@ if (!hx_get_cache('temp/players.txt', 10)) {
 	}
 
 	$sBuf3 = '<table class="table"><thead><tr><th scope="col">Players ' . $aInfo["Players"] . '/' . $aInfo["MaxPlayers"] . '</th><th scope="col">Frags</th><th scope="col">Time in game</th></tr></thead><tbody>';
-	if ($aPlayers[0]) {
+	if (isset ($aPlayers[0])) {
 		foreach ($aPlayers as $a) {
 			if (!empty($a)) {
 				$sBuf3 .= '<tr>';
@@ -71,7 +71,7 @@ if (!hx_get_cache('temp/players.txt', 10)) {
 				if ($sName) {
 					$aBuf4 = $hg_sql -> query_array("SELECT `Steamid` FROM `l4d2_stats` WHERE `Name` LIKE '" . $sName . "' ORDER BY `Time2` DESC LIMIT 1;");
 
-					if ($aBuf4[0]["Steamid"]) {
+					if (isset ($aBuf4[0]["Steamid"])) {
 						$sBuf3 .= '<td><a href="index.php?f=' . $aBuf4[0]["Steamid"] . '" class="link-dark">' . $sName . '</a></td>';
 					}
 					else {
