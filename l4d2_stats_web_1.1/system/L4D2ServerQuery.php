@@ -19,6 +19,8 @@ class L4D2ServerQuery
     private string $ip;
     private int $port;
 
+    private $fp_connect;
+
     public function __construct(string $ip, int $port = 27015)
     {
         if ($port < 1 || $port > 65535) {
@@ -31,6 +33,8 @@ class L4D2ServerQuery
 
         $this->ip = $ip;
         $this->port = $port;
+
+        $this->fp_connect = $this->connect();
     }
 
     private function validateIpv4(string $ip): bool
@@ -58,19 +62,6 @@ class L4D2ServerQuery
         return true;
     }
 
-    public function getServerInfo(): array
-    {
-        try {
-            $fp = $this->connect();
-            $response = $this->sendServerRequest($fp);
-            $result = $this->parseServerResponse($response);
-            fclose($fp);
-            return $result;
-        } catch (RuntimeException $e) {
-            return ['error' => $e->getMessage()];
-        }
-    }
-
     private function connect()
     {
         $fp = @fsockopen("udp://" . $this->ip, $this->port, $errno, $erst, 3);
@@ -82,6 +73,26 @@ class L4D2ServerQuery
         stream_set_timeout($fp, 3);
         stream_set_blocking($fp, true);
         return $fp;
+    }
+
+    public function __destruct()
+    {
+        if ($this->fp_connect) {
+            fclose($this->fp_connect);
+        }
+    }
+
+    public function getServerInfo(): array
+    {
+        try {
+            if (!$this->fp_connect) {
+                throw new RuntimeException("Connection failed");
+            }
+            $response = $this->sendServerRequest($this->fp_connect);
+            return $this->parseServerResponse($response);
+        } catch (RuntimeException $e) {
+            return ['error' => $e->getMessage()];
+        }
     }
 
     private function sendServerRequest($fp): string
@@ -193,10 +204,11 @@ class L4D2ServerQuery
     public function getPlayerList(): array
     {
         try {
-            $fp = $this->connect();
-            $challenge = $this->getPlayerChallenge($fp);
-            $response = $this->sendPlayerRequest($fp, $challenge);
-            fclose($fp);
+            if (!$this->fp_connect) {
+                throw new RuntimeException("Connection failed");
+            }
+            $challenge = $this->getPlayerChallenge($this->fp_connect);
+            $response = $this->sendPlayerRequest($this->fp_connect, $challenge);
             return $this->parsePlayerResponse($response);
         } catch (RuntimeException $e) {
             return ['error' => $e->getMessage()];
