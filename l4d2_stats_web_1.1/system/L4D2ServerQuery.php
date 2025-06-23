@@ -10,16 +10,15 @@ class L4D2ServerQuery
 {
     private const RESPONSE_HEADER = "\xFF\xFF\xFF\xFF";
     private const SERVER_REQUEST_HEADER = "\xFF\xFF\xFF\xFF\x54\x53\x6F\x75\x72\x63\x65\x20\x45\x6E\x67\x69\x6E\x65\x20\x51\x75\x65\x72\x79\x00";
-    private const SERVER_CHALLENGE_RESPONSE = self::RESPONSE_HEADER . "\x41";
+
     private const SERVER_RESPONSE_TYPE = 0x49;      // S2A_INFO_SRC
-    private const PLAYER_REQUEST_HEADER = "\x55";   // A2S_PLAYER
-    private const PLAYER_CHALLENGE_HEADER = "\x41"; // S2C_CHALLENGE
     private const PLAYER_RESPONSE_TYPE = 0x44;      // S2A_PLAYER
 
     private string $ip;
     private int $port;
 
-    private $fp_connect;
+    private string $serverInfo = '';
+    private string $playerResponse = '';
 
     public function __construct(string $ip, int $port = 27015)
     {
@@ -34,32 +33,19 @@ class L4D2ServerQuery
         $this->ip = $ip;
         $this->port = $port;
 
-        $this->fp_connect = $this->connect();
+        $fp = $this->connect();
+        try {
+            $this->serverInfo = $this->sendServerRequest($fp);
+
+            $this->playerResponse = $this->sendPlayerRequest($fp);
+        } finally {
+            fclose($fp);
+        }
     }
 
     private function validateIpv4(string $ip): bool
     {
-        $parts = explode('.', $ip);
-        if (count($parts) !== 4) {
-            return false;
-        }
-
-        foreach ($parts as $part) {
-            if (!ctype_digit($part)) {
-                return false;
-            }
-
-            $num = (int)$part;
-            if ($num < 0 || $num > 255) {
-                return false;
-            }
-
-            if (strlen($part) > 1 && $part[0] === '0') {
-                return false;
-            }
-        }
-
-        return true;
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
     }
 
     private function connect()
@@ -75,46 +61,80 @@ class L4D2ServerQuery
         return $fp;
     }
 
-    public function __destruct()
+    // Получаем информацию о сервере A2S_INFO
+    private function sendServerRequest($fp): string
     {
-        if ($this->fp_connect) {
-            fclose($this->fp_connect);
+        // Запрос на получение номера вызова
+        fwrite($fp, self::SERVER_REQUEST_HEADER);
+
+        // Получаем номер вызова
+        $response = fread($fp, 4096);
+
+        // Проверка номера вызова
+        if (str_starts_with($response, "\xFF\xFF\xFF\xFF\x41")) {
+            $challenge = substr($response, 5, 4);
+
+            // Делаем запрос информации о сервере
+            fwrite($fp, self::SERVER_REQUEST_HEADER . $challenge);
+
+            // Получаем ответ
+            $response = fread($fp, 4096);
+
+            // Проверяем ответ
+            if (!empty($response)) {
+                if ($response[4] !== "\x7F") {
+                    return $response;
+                }
+            }
         }
+        return "";
+    }
+
+    // Подробности о каждом игроке на сервере A2S_PLAYER
+    private function sendPlayerRequest($fp): string
+    {
+        // Запрос на получение номера вызова
+        fwrite($fp, "\xFF\xFF\xFF\xFF\x55\xFF\xFF\xFF\xFF");
+
+        // Получаем номер вызова
+        $response = fread($fp, 4096);
+
+        // Проверка номера вызова
+        if (str_starts_with($response, "\xFF\xFF\xFF\xFF\x41")) {
+            $challenge = substr($response, 5, 4);
+
+            // Делаем запрос информации об игроках
+            fwrite($fp, "\xFF\xFF\xFF\xFF\x55" . $challenge);
+
+            // Получаем ответ
+            $response = fread($fp, 4096);
+
+            // Проверяем ответ
+            if (!empty($response)) {
+                if ($response[4] !== "\x7F") {
+                    return $response;
+                }
+            }
+        }
+        return "";
     }
 
     public function getServerInfo(): array
     {
-        try {
-            if (!$this->fp_connect) {
-                throw new RuntimeException("Connection failed");
-            }
-            $response = $this->sendServerRequest($this->fp_connect);
-            return $this->parseServerResponse($response);
-        } catch (RuntimeException $e) {
-            return ['error' => $e->getMessage()];
-        }
-    }
-
-    private function sendServerRequest($fp): string
-    {
-        fwrite($fp, self::SERVER_REQUEST_HEADER);
-        $response = fread($fp, 4096);
-
-        if (str_starts_with($response, self::SERVER_CHALLENGE_RESPONSE)) {
-            $challenge = substr($response, 5, 4);
-            fwrite($fp, self::SERVER_REQUEST_HEADER . $challenge);
-            $response = fread($fp, 4096);
+        if (!$this->serverInfo) {
+            throw new RuntimeException("getServerInfo() failed");
         }
 
-        if (empty($response)) {
-            throw new RuntimeException('Server response empty');
-        }
-
-        return $response;
+        return $this->parseServerResponse($this->serverInfo);
     }
 
     private function parseServerResponse(string $response): array
     {
+        $length = strlen($response);
+        if ($length < 10) {
+            throw new RuntimeException('Response too short');
+        }
+
         $offset = 0;
         if (!str_starts_with($response, self::RESPONSE_HEADER)) {
             throw new RuntimeException('Invalid server response header');
@@ -149,7 +169,7 @@ class L4D2ServerQuery
             }
             case 112:
             {
-                $Server['Dedicated'] = 'proxy';
+                $Server['Dedicated'] = 'source tv relay (proxy)';
                 break;
             }
             default:
@@ -189,6 +209,10 @@ class L4D2ServerQuery
 
     private function readString(string $data, int &$offset): string
     {
+        if ($offset >= strlen($data)) {
+            throw new RuntimeException('Unexpected end of data in string');
+        }
+
         $nullPos = strpos($data, "\0", $offset);
         if ($nullPos === false) {
             $result = substr($data, $offset);
@@ -203,45 +227,20 @@ class L4D2ServerQuery
 
     public function getPlayerList(): array
     {
-        try {
-            if (!$this->fp_connect) {
-                throw new RuntimeException("Connection failed");
-            }
-            $challenge = $this->getPlayerChallenge($this->fp_connect);
-            $response = $this->sendPlayerRequest($this->fp_connect, $challenge);
-            return $this->parsePlayerResponse($response);
-        } catch (RuntimeException $e) {
-            return ['error' => $e->getMessage()];
-        }
-    }
-
-    private function getPlayerChallenge($fp): string
-    {
-        $request = self::RESPONSE_HEADER . self::PLAYER_REQUEST_HEADER . pack('V', -1);  // FF FF FF FF 55 FF FF FF FF
-        fwrite($fp, $request);
-
-        $response = fread($fp, 4096);
-        if (!str_starts_with($response, self::RESPONSE_HEADER) || ord($response[4]) !== ord(self::PLAYER_CHALLENGE_HEADER)) {
-            throw new RuntimeException('Invalid challenge response');
+        if (!$this->playerResponse) {
+            throw new RuntimeException("getPlayerList() failed");
         }
 
-        return substr($response, 5, 4);
-    }
-
-    private function sendPlayerRequest($fp, string $challenge): string
-    {
-        fwrite($fp, self::RESPONSE_HEADER . self::PLAYER_REQUEST_HEADER . $challenge);
-        $response = fread($fp, 4096);
-
-        if (empty($response)) {
-            throw new RuntimeException('Empty player response');
-        }
-
-        return $response;
+        return $this->parsePlayerResponse($this->playerResponse);
     }
 
     private function parsePlayerResponse(string $response): array
     {
+        $length = strlen($response);
+        if ($length < 10) {
+            throw new RuntimeException('Response too short');
+        }
+
         if (!str_starts_with($response, self::RESPONSE_HEADER) || ord($response[4]) !== self::PLAYER_RESPONSE_TYPE) {
             throw new RuntimeException('Invalid player response header');
         }
@@ -255,11 +254,10 @@ class L4D2ServerQuery
             $offset++;
             $Player['Name'] = $this->readString($response, $offset);
             $Player['Frags'] = unpack('l', substr($response, $offset, 4))[1];
-            $Player['Time'] = (int)unpack('g', substr($response, $offset += 4, 4))[1];
+            $Player['Time'] = round(unpack('g', substr($response, $offset += 4, 4))[1]);
             $Player['TimeF'] = gmdate(($Player['Time'] > 3600 ? 'H:i:s' : 'i:s'), $Player['Time']);
 
             $Players[] = $Player;
-
             $offset += 4;
         }
 
