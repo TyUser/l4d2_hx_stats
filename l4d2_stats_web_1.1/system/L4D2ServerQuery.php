@@ -1,7 +1,6 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
-error_reporting(-1);
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -32,7 +31,6 @@ class L4D2ServerQuery
         $fp = $this->connect();
         try {
             $this->serverInfo = $this->sendServerRequest($fp);
-
             $this->playerResponse = $this->sendPlayerRequest($fp);
         } finally {
             fclose($fp);
@@ -124,10 +122,18 @@ class L4D2ServerQuery
         $Server['Players'] = 0;
         $Server['MaxPlayers'] = 0;
         $Server['Bots'] = 0;
-        $Server['Dedicated'] = 0;
-        $Server['Os'] = 0;
+        $Server['Dedicated'] = '';
+        $Server['Os'] = '';
         $Server['Password'] = 0;
         $Server['Secure'] = 0;
+
+        $Server['Version'] = '';
+        $Server['GameID'] = 0;
+        $Server['Port'] = 0;
+        $Server['SteamID'] = 0;
+        $Server['SpecPort'] = 0;
+        $Server['SpecName'] = '';
+        $Server['Keywords'] = '';
 
         if ($this->serverInfo) {
             $offset = 5;
@@ -142,8 +148,9 @@ class L4D2ServerQuery
             $Server['Players'] = ord($response[$offset += 2]);
             $Server['MaxPlayers'] = ord($response[++$offset]);
             $Server['Bots'] = ord($response[++$offset]);
-            $Server['Dedicated'] = ord($response[++$offset]);
-            switch ($Server['Dedicated']) {
+
+            $dedicated = $response[++$offset];
+            switch ($dedicated) {
                 case 'd':
                 {
                     $Server['Dedicated'] = 'dedicated';
@@ -165,8 +172,8 @@ class L4D2ServerQuery
                 }
             }
 
-            $Server['Os'] = ord($response[++$offset]);
-            switch ($Server['Os']) {
+            $os = $response[++$offset];
+            switch ($os) {
                 case 'l':
                 {
                     $Server['Os'] = 'linux';
@@ -191,6 +198,53 @@ class L4D2ServerQuery
 
             $Server['Password'] = ord($response[++$offset]);
             $Server['Secure'] = ord($response[++$offset]);
+
+            // Чтение версии игры, если есть данные
+            if ($offset < strlen($response)) {
+                $offset += 1;
+                $Server['Version'] = $this->readString($response, $offset);
+            }
+
+            // Обработка Extended Data Flags (EDF)
+            if ($offset < strlen($response)) {
+                $edf = ord($response[$offset++]);
+
+                // Порт сервера
+                if ($edf & 0x80) {
+                    $Server['GamePort'] = unpack('v', substr($response, $offset, 2))[1];
+                    $offset += 2;
+                }
+
+                // SteamID сервера
+                if ($edf & 0x10) {
+                    $Server['SteamID'] = unpack('P', substr($response, $offset, 8))[1];
+                    $offset += 8;
+                }
+
+                // Порт и имя спектатора
+                if ($edf & 0x40) {
+                    $Server['SpecPort'] = unpack('v', substr($response, $offset, 2))[1];
+                    $offset += 2;
+                    $Server['SpecName'] = $this->readString($response, $offset);
+                }
+
+                // Ключевые слова
+                if ($edf & 0x20) {
+                    $Server['GameTags'] = $this->readString($response, $offset);
+                }
+
+                // GameID
+                if ($edf & 0x01) {
+                    if ($Server['AppID'] == 2400) {
+                        $Server['GameID'] = unpack('P', substr($response, $offset, 8))[1];
+                        $offset += 8;
+                    }
+                    else {
+                        $Server['GameID'] = unpack('V', substr($response, $offset, 4))[1];
+                        $offset += 4;
+                    }
+                }
+            }
         }
 
         return $Server;
