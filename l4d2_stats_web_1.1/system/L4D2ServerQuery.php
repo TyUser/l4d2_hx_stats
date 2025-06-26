@@ -18,7 +18,7 @@ class L4D2ServerQuery
     public function __construct(string $ip, int $port = 27015)
     {
         if ($port < 1 || $port > 65535) {
-            throw new RuntimeException("Invalid port number: $port. Port must be between 1 and 65535.");
+            throw new RuntimeException("Invalid port number: $port. Port must be between 1 and 65535");
         }
 
         if (!$this->validateIpv4($ip)) {
