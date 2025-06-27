@@ -3,7 +3,7 @@
 
 const HX_STATS = true;
 require dirname(__FILE__) . '/system/function.php';
-require dirname(__FILE__) . '/system/config.php';
+require dirname(__FILE__) . '/system/configuration.php';
 require dirname(__FILE__) . '/system/L4D2ServerQuery.php';
 
 $sg_content1 = '';
@@ -14,7 +14,8 @@ $sg_content5 = '';
 $ag_symbol = array('(', ')', '%', '$', '<', '>', ',', '.', '"', "'", "!", "SELECT", "UPDATE", "FROM", ";", "+", "-", "*", "@", "^", ":");
 
 $sg_get = hx_get_string('f');
-$hg_sql = new Class_mysqli($aDB['server'], $aDB['username'], $aDB['passwd'], $aDB['dbname']);
+$config = new AppConfig();
+$hg_sql = new Class_mysqli($config->host, $config->user, $config->password, $config->database);
 
 /*
 *	Получаем список топ игроков и кэшируем.
@@ -43,7 +44,7 @@ if (!hx_get_cache('temp/top.txt', 60)) {
 }
 
 if (!hx_get_cache('temp/players.txt', 10)) {
-    $hg_query = new L4D2ServerQuery($sg_ip, $sg_port);
+    $hg_query = new L4D2ServerQuery($config->ip_l4d2, $config->port_l4d2);
 
     $sBuf3 = '';
     $sName = '';
@@ -156,8 +157,8 @@ echo '<!doctype html>
 <body>
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
 	<div class="container">
-		<a class="navbar-brand" href="steam://connect/' . $sg_ip . ':' . $sg_port . '">
-			<span class="text-white">Connect -> ' . $sg_ip . ':' . $sg_port . '</span>
+		<a class="navbar-brand" href="steam://connect/' . $config->ip_l4d2 . ':' . $config->port_l4d2 . '">
+			<span class="text-white">Connect -> ' . $config->ip_l4d2 . ':' . $config->port_l4d2 . '</span>
 		</a>
 	</div>
 </nav>
