@@ -9,20 +9,49 @@ if (!defined('HX_STATS')) {
     exit();
 }
 
-function hx_get_string(string $id): string
+class HxUtils
 {
-    if (isset($_GET[$id])) {
-        $s = preg_replace('#[^а-яА-Яa-zA-Z0-9:_]#', '', $_GET[$id]);
-        return substr($s, 0, 64);
-    }
-    return '';
-}
+    private array $injectionPatterns = array('!', '"'
+    , '#', '$', '%', "'", '(', ')', '*', '*/', '+', ',', '-', '.'
+    , '/*', '0x', ':', ';', '<', '=', '>', '@', 'AND'
+    , 'DELETE', 'DROP', 'EXEC', 'FROM', 'INSERT', 'OR'
+    , 'SELECT', 'TRUNCATE', 'UNION', 'UPDATE', '['
+    , '\\', ']', '^', '{', '|', '}', '~');
 
-function hx_steam(string $s): string
-{
-    $parts = explode(':', str_replace('STEAM_', '', $s));
-    $iS = (int)$parts[1] + 7960265728 + ((int)$parts[2] * 2);
-    return 'https://steamcommunity.com/profiles/7656119' . $iS;
+    public function sanitizeGetParameter(string $paramName): string
+    {
+        if (isset($_GET[$paramName])) {
+            $cleanValue = preg_replace('#[^а-яА-Яa-zA-Z0-9:_]#', '', $_GET[$paramName]);
+            return substr($cleanValue, 0, 64);
+        }
+
+        return '';
+    }
+
+    public function convertSteamId(string $steamId): string
+    {
+        $cleanId = str_replace('STEAM_', '', $steamId);
+        $parts = explode(':', $cleanId);
+
+        if (count($parts) < 3) {
+            return '';
+        }
+
+        $authServer = (int)$parts[1];
+        $accountId = (int)$parts[2];
+
+        $steamId64 = ($accountId * 2) + 0x0110000100000000 + $authServer;
+        return 'https://steamcommunity.com/profiles/' . $steamId64;
+    }
+
+    public function sanitizeString(string $name): string
+    {
+        if ($name) {
+            return str_replace($this->injectionPatterns, ' ', $name);
+        }
+
+        return '';
+    }
 }
 
 class Class_mysqli

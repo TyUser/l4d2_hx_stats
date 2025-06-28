@@ -12,39 +12,35 @@ require dirname(__FILE__) . '/system/L4D2ServerQuery.php';
 
 $config = new AppConfig();
 $cache = new Cache();
-$serverInfo = $cache->get_array('cache_server_info', $config->cache_time);
-$players = $cache->get_array('cache_player_list', $config->cache_time);
 
-if ($serverInfo === null) {
+// Получаем кэш L4D2ServerQuery
+$serverInfo2 = $cache->get_array('cache_server_info', $config->cache_time);
+$players2 = $cache->get_array('cache_player_list', $config->cache_time);
+
+// Если кэша нет то подключаемся к L4D2ServerQuery и обновляем кэш
+if ($serverInfo2 === null) {
     $query = new L4D2ServerQuery($config->ip_l4d2, $config->port_l4d2);
 
-    $serverInfo = $query->getServerInfo();
-    $players = $query->getPlayerList();
+    $serverInfo2 = $query->getServerInfo();
+    $players2 = $query->getPlayerList();
 
-    $cache->set_array('cache_server_info', $serverInfo);
-    $cache->set_array('cache_player_list', $players);
+    $cache->set_array('cache_server_info', $serverInfo2);
+    $cache->set_array('cache_player_list', $players2);
 }
 
-if ($serverInfo === null) {
-    $serverInfo["HostName"] = '';
-    $serverInfo["Map"] = '';
-    $serverInfo["Players"] = 0;
-    $serverInfo["MaxPlayers"] = 0;
-}
+$serverName = $serverInfo2["HostName"];
+$mapName = $serverInfo2["Map"];
 
-$serverName = $serverInfo["HostName"];
-$mapName = $serverInfo["Map"];
+$playersTable = '<table class="table"><thead><tr>' . '<th scope="col">Игроки ' . $serverInfo2["Players"] . '/' . $serverInfo2["MaxPlayers"] . '</th>' . '<th scope="col">Фраги</th>' . '<th scope="col">Время в игре</th>' . '</tr></thead><tbody>';
 
-$playersTable = '<table class="table"><thead><tr>' . '<th scope="col">Игроки ' . $serverInfo["Players"] . '/' . $serverInfo["MaxPlayers"] . '</th>' . '<th scope="col">Фраги</th>' . '<th scope="col">Время в игре</th>' . '</tr></thead><tbody>';
-
-if (!empty($players)) {
-    foreach ($players as $player) {
+if (!empty($players2)) {
+    foreach ($players2 as $player) {
         if (empty($player)) continue;
 
         $name = htmlspecialchars($player['Name'], ENT_QUOTES, 'UTF-8');
         $name = $name ?: 'Аноним';
 
-        $playersTable .= '<tr>' . '<td>' . $name . '</td>' . '<td>' . ($player['Frags'] ?? 0) . '</td>' . '<td>' . ($player['TimeF'] ?? '00:00') . '</td>' . '</tr>';
+        $playersTable .= '<tr>' . '<td>' . $name . '</td>' . '<td>' . $player['Frags'] . '</td>' . '<td>' . $player['TimeF'] . '</td>' . '</tr>';
     }
 }
 
