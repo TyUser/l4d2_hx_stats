@@ -12,22 +12,10 @@ if (!defined('HX_STATS')) {
 function hx_get_string(string $id): string
 {
     if (isset($_GET[$id])) {
-        $s = preg_replace('#[^a-zA-Z0-9:_]#', '', $_GET[$id]);
+        $s = preg_replace('#[^а-яА-Яa-zA-Z0-9:_]#', '', $_GET[$id]);
         return substr($s, 0, 64);
     }
     return '';
-}
-
-function hx_get_cache(string $s, int $i): bool
-{
-    if (file_exists($s)) {
-        $i2 = filemtime($s);
-        if ((time() - $i) < $i2) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 function hx_steam(string $s): string

@@ -1,6 +1,10 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
 const HX_STATS = true;
 require dirname(__FILE__) . '/system/function.php';
 require dirname(__FILE__) . '/system/configuration.php';
@@ -37,7 +41,7 @@ if (!empty($players)) {
     foreach ($players as $player) {
         if (empty($player)) continue;
 
-        $name = htmlspecialchars(trim($player['Name']), ENT_QUOTES, 'UTF-8');
+        $name = htmlspecialchars($player['Name'], ENT_QUOTES, 'UTF-8');
         $name = $name ?: 'Аноним';
 
         $playersTable .= '<tr>' . '<td>' . $name . '</td>' . '<td>' . ($player['Frags'] ?? 0) . '</td>' . '<td>' . ($player['TimeF'] ?? '00:00') . '</td>' . '</tr>';

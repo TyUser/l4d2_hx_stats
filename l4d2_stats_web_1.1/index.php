@@ -1,60 +1,79 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
 const HX_STATS = true;
 require dirname(__FILE__) . '/system/function.php';
 require dirname(__FILE__) . '/system/configuration.php';
 require dirname(__FILE__) . '/system/L4D2ServerQuery.php';
 
-$sg_content1 = '';
-$sg_content2 = '';
-$sg_content3 = '';
-$sg_content4 = '';
-$sg_content5 = '';
-$ag_symbol = array('(', ')', '%', '$', '<', '>', ',', '.', '"', "'", "!", "SELECT", "UPDATE", "FROM", ";", "+", "-", "*", "@", "^", ":");
-
-$sg_get = hx_get_string('f');
+$cache = new Cache();
 $config = new AppConfig();
 $hg_sql = new Class_mysqli($config->host, $config->user, $config->password, $config->database);
 
-/*
-*	Получаем список топ игроков и кэшируем.
-*/
-if (!hx_get_cache('temp/top.txt', 60)) {
-    $sBuf1 = '<table class="table"><thead><tr><th scope="col">Top Players</th><th scope="col">Points</th></tr></thead><tbody>';
+$search = hx_get_string('f');
+
+$sg_content5 = '';
+$ag_symbol = array('(', ')', '%', '$', '<', '>', ',', '.', '"', "'", "!", "SELECT", "UPDATE", "FROM", ";", "+", "-", "*", "@", "^", ":");
+
+// Получаем кэш L4D2ServerQuery
+$serverInfo = $cache->get_array('cache_server_info', $config->cache_time);
+$players = $cache->get_array('cache_player_list', $config->cache_time);
+
+// Если кэша нет то подключаемся к L4D2ServerQuery и обновляем кэш
+if ($serverInfo === null) {
+    $query = new L4D2ServerQuery($config->ip_l4d2, $config->port_l4d2);
+
+    $serverInfo = $query->getServerInfo();
+    $players = $query->getPlayerList();
+
+    $cache->set_array('cache_server_info', $serverInfo);
+    $cache->set_array('cache_player_list', $players);
+}
+
+// Если информацию с л4д2 сервера не удается получить то принудительно предопределяем чтобы избежать ошибок при использовании данной переменной
+if ($serverInfo === null) {
+    $serverInfo["HostName"] = '';
+    $serverInfo["Map"] = '';
+    $serverInfo["Players"] = 0;
+    $serverInfo["MaxPlayers"] = 0;
+}
+
+// Получаем список топ 50 игроков
+$sg_content4 = $cache->get_string('cache_top50', $config->cache_time * 20);
+if ($sg_content4 === null) {
+    $sTop50 = '';
+
     $aBuf2 = $hg_sql->query_array('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` ORDER BY `Points` DESC LIMIT 50');
     if ($aBuf2) {
         foreach ($aBuf2 as $a) {
             if (!empty($a)) {
-                $sBuf1 .= '<tr>';
-                $sBuf1 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name']) . '</a></td><td>' . $a['Points'] . '</td>';
-                $sBuf1 .= '</tr>';
+                $sTop50 .= '<tr>';
+                $sTop50 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name']) . '</a></td><td>' . $a['Points'] . '</td>';
+                $sTop50 .= '</tr>';
             }
         }
     }
-    $sBuf1 .= '</tbody></table>';
 
-    $fp = fopen('temp/top.txt', 'w');
-    if ($fp) {
-        fwrite($fp, trim($sBuf1));
-        fclose($fp);
-    }
+    $sg_content4 = '<table class="table"><thead><tr><th scope="col">Top Players</th><th scope="col">Points</th></tr></thead><tbody>';
+    $sg_content4 .= $sTop50;
+    $sg_content4 .= '</tbody></table>';
+    unset($sTop50, $aBuf2);
 
-    unset($sBuf1, $aBuf2);
+    $cache->set_string('cache_top50', $sg_content4);
 }
 
-if (!hx_get_cache('temp/players.txt', 10)) {
-    $hg_query = new L4D2ServerQuery($config->ip_l4d2, $config->port_l4d2);
-
+// Получаем и кэшируем список игроков на сервере
+$sg_content3 = $cache->get_string('cache_players', $config->cache_time);
+if ($sg_content3 === null) {
     $sBuf3 = '';
     $sName = '';
 
-    $aInfo = $hg_query->getServerInfo();
-    $aPlayers = $hg_query->getPlayerList();
-
-    $sBuf3 = '<table class="table"><thead><tr><th scope="col">Players ' . $aInfo["Players"] . '/' . $aInfo["MaxPlayers"] . '</th><th scope="col">Frags</th><th scope="col">Time in game</th></tr></thead><tbody>';
-    if (isset ($aPlayers[0])) {
-        foreach ($aPlayers as $a) {
+    if (isset ($players[0])) {
+        foreach ($players as $a) {
             if (!empty($a)) {
                 $sBuf3 .= '<tr>';
                 $sName = str_replace($ag_symbol, ' ', $a['Name']);
@@ -62,7 +81,7 @@ if (!hx_get_cache('temp/players.txt', 10)) {
                     $aBuf4 = $hg_sql->query_array("SELECT `Steamid` FROM `l4d2_stats` WHERE `Name` LIKE '" . $sName . "' ORDER BY `Time2` DESC LIMIT 1;");
 
                     if (isset ($aBuf4[0]["Steamid"])) {
-                        $sBuf3 .= '<td><a href="index.php?f=' . $aBuf4[0]["Steamid"] . '" class="link-dark">' . $sName . '</a></td>';
+                        $sBuf3 .= '<td><a href="index.php?f=' . $aBuf4[0]["Steamid"] . '" class="link-dark">' . htmlspecialchars($sName) . '</a></td>';
                     }
                     else {
                         $sBuf3 .= '<td>' . $sName . '</td>';
@@ -78,72 +97,62 @@ if (!hx_get_cache('temp/players.txt', 10)) {
             }
         }
     }
-    $sBuf3 .= '</tbody></table>';
 
-    $gh1 = fopen('temp/players.txt', 'w');
-    if ($gh1) {
-        fwrite($gh1, trim($aInfo["HostName"]) . "\n");
-        fwrite($gh1, trim($aInfo["Map"]) . "\n");
-        fwrite($gh1, trim($sBuf3));
-        fclose($gh1);
-    }
 
-    unset($aInfo, $aPlayers, $sBuf3, $sName);
+    $sg_content3 = '<table class="table"><thead><tr><th scope="col">Players ' . $serverInfo["Players"] . '/' . $serverInfo["MaxPlayers"] . '</th><th scope="col">Frags</th><th scope="col">Time in game</th></tr></thead><tbody>';
+    $sg_content3 .= $sBuf3;
+    $sg_content3 .= '</tbody></table>';
+    unset($sBuf3, $sName);
+
+    $cache->set_string('cache_players', $sg_content3);
 }
 
-if ($sg_get) {
-    $aBuf5 = array();
+// Проверяем поиск
+if ($search !== '') {
+    $sg_content5 = $cache->get_string(md5($search), $config->cache_time * 20);
+    if ($sg_content5 === null) {
+        $player = '';
+        $aBuf5 = [];
 
-    if (strripos($sg_get, 'STEAM_') === false) {
-        $aBuf6 = $hg_sql->query_array("SELECT `Steamid` FROM `l4d2_stats` WHERE `Name` LIKE '%" . $sg_get . "%' ORDER BY `Time2` DESC LIMIT 1;");
-        if ($aBuf6[0]["Steamid"]) {
-            header('Location: index.php?f=' . $aBuf6[0]["Steamid"]);
-            exit();
+        if (strripos($search, 'STEAM_') === false) {
+            $aBuf5 = $hg_sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Name` LIKE '%" . $search . "%' ORDER BY `Time2` DESC LIMIT 1;");
         }
-    }
-    else {
-        $aBuf5 = $hg_sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Steamid` LIKE '" . $sg_get . "'");
-    }
+        else {
+            $aBuf5 = $hg_sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Steamid` LIKE '" . $search . "'");
+        }
 
-    if ($aBuf5['0']['Steamid']) {
-        $sg_content5 = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . hx_steam($sg_get) . '">' . htmlspecialchars($aBuf5['0']['Name']) . '</a></th><th scope="col"></th></tr></thead><tbody>';
+        if (!empty($aBuf5['0']['Steamid'])) {
+            $player = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . hx_steam($aBuf5['0']['Steamid']) . '">' . htmlspecialchars($aBuf5['0']['Name']) . '</a></th><th scope="col"></th></tr></thead><tbody>';
 
-        $sg_content5 .= '<tr><td>Points: </td><td>' . $aBuf5['0']['Points'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Boomer: </td><td>' . $aBuf5['0']['Boomer'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Charger: </td><td>' . $aBuf5['0']['Charger'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Hunter: </td><td>' . $aBuf5['0']['Hunter'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Infected: </td><td>' . $aBuf5['0']['Infected'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Jockey: </td><td>' . $aBuf5['0']['Jockey'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Smoker: </td><td>' . $aBuf5['0']['Smoker'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Spitter: </td><td>' . $aBuf5['0']['Spitter'] . '</td></tr>';
+            $player .= '<tr><td>Points: </td><td>' . $aBuf5['0']['Points'] . '</td></tr>';
+            $player .= '<tr><td>Boomer: </td><td>' . $aBuf5['0']['Boomer'] . '</td></tr>';
+            $player .= '<tr><td>Charger: </td><td>' . $aBuf5['0']['Charger'] . '</td></tr>';
+            $player .= '<tr><td>Hunter: </td><td>' . $aBuf5['0']['Hunter'] . '</td></tr>';
+            $player .= '<tr><td>Infected: </td><td>' . $aBuf5['0']['Infected'] . '</td></tr>';
+            $player .= '<tr><td>Jockey: </td><td>' . $aBuf5['0']['Jockey'] . '</td></tr>';
+            $player .= '<tr><td>Smoker: </td><td>' . $aBuf5['0']['Smoker'] . '</td></tr>';
+            $player .= '<tr><td>Spitter: </td><td>' . $aBuf5['0']['Spitter'] . '</td></tr>';
 
-        $iTimeAll = (int)($aBuf5['0']['Time1'] / 60);
+            $iTimeAll = (int)($aBuf5['0']['Time1'] / 60);
 
-        $sg_content5 .= '<tr><td>Tank: </td><td>' . $aBuf5['0']['Tank'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Witch: </td><td>' . $aBuf5['0']['Witch'] . '</td></tr>';
-        $sg_content5 .= '<tr><td>Total game time: </td><td>' . $iTimeAll . ' (hour..)</td></tr>';
-        $sg_content5 .= '<tr><td>Last visit: </td><td>' . date('d.m.Y', (int)$aBuf5['0']['Time2']) . '</td></tr>';
+            $player .= '<tr><td>Tank: </td><td>' . $aBuf5['0']['Tank'] . '</td></tr>';
+            $player .= '<tr><td>Witch: </td><td>' . $aBuf5['0']['Witch'] . '</td></tr>';
+            $player .= '<tr><td>Total game time: </td><td>' . $iTimeAll . ' (hour..)</td></tr>';
+            $player .= '<tr><td>Last visit: </td><td>' . date('d.m.Y', (int)$aBuf5['0']['Time2']) . '</td></tr>';
+        }
+        else {
+            if (strripos($search, 'STEAM_') !== false) {
+                $player = '<table class="table"><thead><tr><th scope="col">Игрок: <a class="link-dark" target="_blank" href="' . hx_steam($search) . '">' . $search . '</a></th><th scope="col"></th></tr></thead><tbody>';
+            }
+        }
+
+        $sg_content5 .= $player;
         $sg_content5 .= '</tbody></table>';
+        unset($player, $aBuf5);
+
+        $cache->set_string(md5($search), $sg_content5);
     }
-    else {
-        if (strripos($sg_get, 'STEAM_') !== false) {
-            $sg_content5 = '<table class="table"><thead><tr><th scope="col">Игрок: <a class="link-dark" target="_blank" href="' . hx_steam($sg_get) . '">' . $sg_get . '</a></th><th scope="col"></th></tr></thead><tbody>';
-            $sg_content5 .= '</tbody></table>';
-        }
-    }
-
-    unset($aBuf5);
 }
-
-$h1 = fopen('temp/players.txt', "r");
-if ($h1) {
-    $sg_content1 = trim(fgets($h1, 4096));
-    $sg_content2 = trim(fgets($h1, 4096));
-    $sg_content3 = trim(fgets($h1, 4096));
-    fclose($h1);
-}
-
-$sg_content4 = file_get_contents('temp/top.txt');
 
 echo '<!doctype html>
 <html lang="en">
@@ -151,7 +160,7 @@ echo '<!doctype html>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="">
-	<title>' . $sg_content1 . '</title>
+	<title>' . $serverInfo["HostName"] . '</title>
 	<link rel="stylesheet" href="bootstrap.min.css">
 </head>
 <body>
@@ -166,8 +175,8 @@ echo '<!doctype html>
 <br>
 <br>
 <div class="container">
-	<h2 style="text-align: center;">' . $sg_content1 . '</h2>
-	<h5 style="text-align: center;">' . $sg_content2 . '</h5>
+	<h2 style="text-align: center;">' . $serverInfo["HostName"] . '</h2>
+	<h5 style="text-align: center;">' . $serverInfo["Map"] . '</h5>
 	<br>
 	<form action="index.php" method="get" style="text-align: center;">
 		<input type="search" size="21" name="f" placeholder="STEAM_ID, Name" maxlength="23">
