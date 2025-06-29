@@ -1,9 +1,9 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+//error_reporting(E_ALL);
+//ini_set('display_errors', 1);
+//ini_set('display_startup_errors', 1);
 
 const HX_STATS = true;
 require dirname(__FILE__) . '/system/function.php';
@@ -14,8 +14,8 @@ $config = new AppConfig();
 $cache = new Cache();
 
 // Получаем кэш L4D2ServerQuery
-$serverInfo2 = $cache->get_array('cache_server_info', $config->cache_time);
-$players2 = $cache->get_array('cache_player_list', $config->cache_time);
+$serverInfo2 = $cache->get_array('cache_server_info2', $config->cache_time);
+$players2 = $cache->get_array('cache_player_list2', $config->cache_time);
 
 // Если кэша нет то подключаемся к L4D2ServerQuery и обновляем кэш
 if ($serverInfo2 === null) {
@@ -24,21 +24,21 @@ if ($serverInfo2 === null) {
     $serverInfo2 = $query->getServerInfo();
     $players2 = $query->getPlayerList();
 
-    $cache->set_array('cache_server_info', $serverInfo2);
-    $cache->set_array('cache_player_list', $players2);
+    $cache->set_array('cache_server_info2', $serverInfo2);
+    $cache->set_array('cache_player_list2', $players2);
 }
 
 $serverName = $serverInfo2["HostName"];
 $mapName = $serverInfo2["Map"];
 
-$playersTable = '<table class="table"><thead><tr>' . '<th scope="col">Игроки ' . $serverInfo2["Players"] . '/' . $serverInfo2["MaxPlayers"] . '</th>' . '<th scope="col">Фраги</th>' . '<th scope="col">Время в игре</th>' . '</tr></thead><tbody>';
+$playersTable = '<table class="table"><thead><tr>' . '<th scope="col">Players ' . $serverInfo2["Players"] . '/' . $serverInfo2["MaxPlayers"] . '</th>' . '<th scope="col">Frags</th>' . '<th scope="col">Time in game</th>' . '</tr></thead><tbody>';
 
 if (!empty($players2)) {
     foreach ($players2 as $player) {
         if (empty($player)) continue;
 
         $name = htmlspecialchars($player['Name'], ENT_QUOTES, 'UTF-8');
-        $name = $name ?: 'Аноним';
+        $name = $name ?: 'Anonymous';
 
         $playersTable .= '<tr>' . '<td>' . $name . '</td>' . '<td>' . $player['Frags'] . '</td>' . '<td>' . $player['TimeF'] . '</td>' . '</tr>';
     }
@@ -60,7 +60,7 @@ $html = <<<HTML
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
 	<div class="container">
 		<a class="navbar-brand" href="steam://connect/$config->ip_l4d2:$config->port_l4d2">
-			<span class="text-white">Подключиться → $config->ip_l4d2:$config->port_l4d2</span>
+			<span class="text-white">Connect → $config->ip_l4d2:$config->port_l4d2</span>
 		</a>
 	</div>
 </nav>

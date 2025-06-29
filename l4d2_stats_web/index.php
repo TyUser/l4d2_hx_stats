@@ -1,9 +1,9 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+//error_reporting(E_ALL);
+//ini_set('display_errors', 1);
+//ini_set('display_startup_errors', 1);
 
 const HX_STATS = true;
 require dirname(__FILE__) . '/system/function.php';
@@ -43,7 +43,7 @@ if ($sg_content4 === null) {
     $sTop50 = '';
 
     $aBuf2 = $hg_sql->query_array('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` ORDER BY `Points` DESC LIMIT 50');
-    if ($aBuf2) {
+    if (!empty($aBuf2)) {
         foreach ($aBuf2 as $a) {
             if (!empty($a)) {
                 $sTop50 .= '<tr>';
@@ -67,7 +67,7 @@ if ($sg_content3 === null) {
     $sBuf3 = '';
     $sName = '';
 
-    if (isset ($players[0])) {
+    if (!empty($players)) {
         foreach ($players as $a) {
             if (!empty($a)) {
                 $sBuf3 .= '<tr>';
@@ -138,13 +138,16 @@ if ($search !== '') {
             $player .= '</tbody></table>';
         }
         else {
+            $player = '<table class="table"><thead><tr><th scope="col">Player: ';
+
             if ($isSteamID) {
-                $player = '<table class="table"><thead><tr><th scope="col">Игрок: <a class="link-dark" target="_blank" href="' . $utils->convertSteamId($search) . '">' . htmlspecialchars($search, ENT_QUOTES, 'UTF-8') . '</a></th><th scope="col"></th></tr></thead><tbody>';
-                $player .= '</tbody></table>';
+                $player .= '<a class="link-dark" target="_blank" href="' . $utils->convertSteamId($search) . '">' . htmlspecialchars($search, ENT_QUOTES, 'UTF-8') . '</a>';
             }
             else {
-                $player = '<div class="alert alert-warning">Player not found</div>';
+                $player .= 'Player not found';
             }
+
+            $player .= '</th><th scope="col"></th></tr></thead><tbody></tbody></table>';
         }
 
         $sg_content5 = $player;
