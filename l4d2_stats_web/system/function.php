@@ -21,7 +21,7 @@ class HxUtils
     public function sanitizeGetParameter(string $paramName): string
     {
         if (isset($_GET[$paramName])) {
-            $cleanValue = preg_replace('#[^а-яА-Яa-zA-Z0-9:_]#', '', $_GET[$paramName]);
+            $cleanValue = preg_replace('#[^а-яА-Яa-zA-Z0-9:_]#u', '', $_GET[$paramName]);
             return substr($cleanValue, 0, 64);
         }
 
@@ -30,15 +30,12 @@ class HxUtils
 
     public function convertSteamId(string $steamId): string
     {
-        $cleanId = str_replace('STEAM_', '', $steamId);
-        $parts = explode(':', $cleanId);
-
-        if (count($parts) < 3) {
+        if (!preg_match('/^STEAM_[0-9]:([0-1]):(\d+)$/', $steamId, $matches)) {
             return '';
         }
 
-        $authServer = (int)$parts[1];
-        $accountId = (int)$parts[2];
+        $authServer = (int)$matches[1];
+        $accountId = (int)$matches[2];
 
         $steamId64 = ($accountId * 2) + 0x0110000100000000 + $authServer;
         return 'https://steamcommunity.com/profiles/' . $steamId64;
@@ -100,6 +97,28 @@ class Cache
     {
         if (!file_exists(self::CACHE_DIR)) {
             mkdir(self::CACHE_DIR, 0755, true);
+        }
+
+        // Позволяет в автоматическом режиме защищать от бесконтрольного разрастания кэша
+        if (mt_rand(1, 100) <= 5) {
+            $this->cleanExpired();
+        }
+    }
+
+    public function cleanExpired(int $maxLifetime = 86400): void
+    {
+        $files = glob(self::CACHE_DIR . '*');
+        $now = time();
+
+        foreach ($files as $file) {
+            if (!is_file($file)) {
+                continue;
+            }
+
+            $lastModified = filemtime($file);
+            if ($now - $lastModified > $maxLifetime) {
+                unlink($file);
+            }
         }
     }
 
