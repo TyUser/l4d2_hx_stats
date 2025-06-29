@@ -13,11 +13,11 @@ require dirname(__FILE__) . '/system/L4D2ServerQuery.php';
 $cache = new Cache();
 $utils = new HxUtils();
 $config = new AppConfig();
-$hg_sql = new Class_mysqli($config->host, $config->user, $config->password, $config->database);
+$sql = new Class_mysqli($config->host, $config->user, $config->password, $config->database);
 
 $search = $utils->sanitizeGetParameter('f');
 
-$sg_content5 = '';
+$sg_search_player = '';
 
 // Получаем кэш L4D2ServerQuery
 $serverInfo = $cache->get_array('cache_server_info', $config->cache_time);
@@ -38,11 +38,11 @@ $serverName = $serverInfo["HostName"];
 $mapName = $serverInfo["Map"];
 
 // Получаем список топ 50 игроков
-$sg_content4 = $cache->get_string('cache_top50', $config->cache_time * 20);
-if ($sg_content4 === null) {
+$sg_top50_players = $cache->get_string('cache_top50', $config->cache_time * 20);
+if ($sg_top50_players === null) {
     $sTop50 = '';
 
-    $aBuf2 = $hg_sql->query_array('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` ORDER BY `Points` DESC LIMIT 50');
+    $aBuf2 = $sql->query_array('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` ORDER BY `Points` DESC LIMIT 50');
     if (!empty($aBuf2)) {
         foreach ($aBuf2 as $a) {
             if (!empty($a)) {
@@ -53,17 +53,17 @@ if ($sg_content4 === null) {
         }
     }
 
-    $sg_content4 = '<table class="table"><thead><tr><th scope="col">Top Players</th><th scope="col">Points</th></tr></thead><tbody>';
-    $sg_content4 .= $sTop50;
-    $sg_content4 .= '</tbody></table>';
+    $sg_top50_players = '<table class="table"><thead><tr><th scope="col">Top Players</th><th scope="col">Points</th></tr></thead><tbody>';
+    $sg_top50_players .= $sTop50;
+    $sg_top50_players .= '</tbody></table>';
     unset($sTop50, $aBuf2);
 
-    $cache->set_string('cache_top50', $sg_content4);
+    $cache->set_string('cache_top50', $sg_top50_players);
 }
 
 // Получаем и кэшируем список игроков на сервере
-$sg_content3 = $cache->get_string('cache_players', $config->cache_time);
-if ($sg_content3 === null) {
+$sg_server_players = $cache->get_string('cache_players', $config->cache_time);
+if ($sg_server_players === null) {
     $sBuf3 = '';
     $sName = '';
 
@@ -73,7 +73,7 @@ if ($sg_content3 === null) {
                 $sBuf3 .= '<tr>';
                 $sName = $utils->sanitizeString($a['Name']);
                 if ($sName) {
-                    $aBuf4 = $hg_sql->query_array("SELECT `Steamid` FROM `l4d2_stats` WHERE `Name` LIKE '" . $sName . "' ORDER BY `Time2` DESC LIMIT 1;");
+                    $aBuf4 = $sql->query_array("SELECT `Steamid` FROM `l4d2_stats` WHERE `Name` LIKE '" . $sName . "' ORDER BY `Time2` DESC LIMIT 1;");
 
                     if (isset ($aBuf4[0]["Steamid"])) {
                         $sBuf3 .= '<td><a href="index.php?f=' . $aBuf4[0]["Steamid"] . '" class="link-dark">' . htmlspecialchars($sName, ENT_QUOTES, 'UTF-8') . '</a></td>';
@@ -93,28 +93,28 @@ if ($sg_content3 === null) {
         }
     }
 
-    $sg_content3 = '<table class="table"><thead><tr><th scope="col">Players ' . $serverInfo["Players"] . '/' . $serverInfo["MaxPlayers"] . '</th><th scope="col">Frags</th><th scope="col">Time in game</th></tr></thead><tbody>';
-    $sg_content3 .= $sBuf3;
-    $sg_content3 .= '</tbody></table>';
+    $sg_server_players = '<table class="table"><thead><tr><th scope="col">Players ' . $serverInfo["Players"] . '/' . $serverInfo["MaxPlayers"] . '</th><th scope="col">Frags</th><th scope="col">Time in game</th></tr></thead><tbody>';
+    $sg_server_players .= $sBuf3;
+    $sg_server_players .= '</tbody></table>';
     unset($sBuf3, $sName);
 
-    $cache->set_string('cache_players', $sg_content3);
+    $cache->set_string('cache_players', $sg_server_players);
 }
 
 // Проверяем поиск
 if ($search !== '') {
     $cacheKey = md5($search);
-    $sg_content5 = $cache->get_string($cacheKey, $config->cache_time * 20);
-    if ($sg_content5 === null) {
+    $sg_search_player = $cache->get_string($cacheKey, $config->cache_time * 20);
+    if ($sg_search_player === null) {
         $player = '';
         $aBuf5 = [];
 
         $isSteamID = preg_match('/^STEAM_\d+:\d+:\d+$/', $search);
         if ($isSteamID) {
-            $aBuf5 = $hg_sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Steamid` LIKE '" . $search . "'");
+            $aBuf5 = $sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Steamid` LIKE '" . $search . "'");
         }
         else {
-            $aBuf5 = $hg_sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Name` LIKE '%" . $search . "%' ORDER BY `Time2` DESC LIMIT 1;");
+            $aBuf5 = $sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Name` LIKE '%" . $search . "%' ORDER BY `Time2` DESC LIMIT 1;");
         }
 
         if (!empty($aBuf5)) {
@@ -139,21 +139,19 @@ if ($search !== '') {
         }
         else {
             $player = '<table class="table"><thead><tr><th scope="col">Player: ';
-
             if ($isSteamID) {
                 $player .= '<a class="link-dark" target="_blank" href="' . $utils->convertSteamId($search) . '">' . htmlspecialchars($search, ENT_QUOTES, 'UTF-8') . '</a>';
             }
             else {
                 $player .= 'Player not found';
             }
-
             $player .= '</th><th scope="col"></th></tr></thead><tbody></tbody></table>';
         }
 
-        $sg_content5 = $player;
+        $sg_search_player = $player;
         unset($player, $aBuf5);
 
-        $cache->set_string($cacheKey, $sg_content5);
+        $cache->set_string($cacheKey, $sg_search_player);
     }
 }
 
@@ -189,13 +187,13 @@ $html = <<<HTML
 	<br>
 	<div class="row">
 		<div class="col">
-			$sg_content4
+			$sg_top50_players
 		</div>
 
 		<div class="col">
-			$sg_content3
+			$sg_server_players
 			<br>
-			$sg_content5
+			$sg_search_player
 		</div>
 	</div>
 	<br>
