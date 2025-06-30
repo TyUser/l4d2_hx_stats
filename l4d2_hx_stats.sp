@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 /*
  *
- * Copyright 2011 - 2022 steamcommunity.com/profiles/76561198025355822/
+ * Copyright 2011 - 2024 steamcommunity.com/profiles/76561198025355822/
  * native int HxGetClientPoints(int client); // Получить поинты игрока в стороннем плагине
  * Статистика игроков.
  *
@@ -64,7 +64,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.1",
+	version = "1.2",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -77,6 +77,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
+	HookEvent("defibrillator_used", Event_DefibrillatorUsed);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	HookEvent("map_transition", Event_SQL_Save, EventHookMode_PostNoCopy);
 	HookEvent("finale_win", Event_SQL_Save, EventHookMode_PostNoCopy);
@@ -357,6 +358,19 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 	CreateTimer(17.0, HxTimerR_18, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(40.0, HxTimerR_18, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(85.0, HxTimerR_18, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public void Event_DefibrillatorUsed(Event event, const char [] name, bool dontBroadcast)
+{
+	int iSubject = GetClientOfUserId(event.GetInt("subject"));
+	if (iSubject)
+	{
+		if (!IsFakeClient(iSubject))
+		{
+			int iPoints = ig_real[iSubject][HX_POINTS];
+			HxColorC(iSubject, iPoints);
+		}
+	}
 }
 
 public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
