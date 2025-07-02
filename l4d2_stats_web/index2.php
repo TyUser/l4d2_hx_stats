@@ -6,9 +6,9 @@
 //ini_set('display_startup_errors', 1);
 
 const HX_STATS = true;
-require dirname(__FILE__) . '/system/function.php';
-require dirname(__FILE__) . '/system/configuration.php';
-require dirname(__FILE__) . '/system/L4D2ServerQuery.php';
+require __DIR__ . '/system/function.php';
+require __DIR__ . '/system/configuration.php';
+require __DIR__ . '/system/L4D2ServerQuery.php';
 
 $config = new AppConfig();
 $cache = new Cache();
