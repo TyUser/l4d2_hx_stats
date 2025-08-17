@@ -326,7 +326,7 @@ int HxColorC(int &client, int iPoints)
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 public Action HxTimerR_18(Handle timer)
