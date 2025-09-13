@@ -64,7 +64,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.3",
+	version = "1.4a",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -109,8 +109,12 @@ public void OnConfigsExecuted()
 			hg_db = SQL_Connect(HX_STATS, true, sg_buf2, sizeof(sg_buf2)-1);
 			if (!hg_db)
 			{
-				LogError("%s", sg_buf2);
+				LogError("Failed to connect to database '%s'. Error: %s", HX_STATS, sg_buf2);
 			}
+		}
+		else
+		{
+			LogError("Database configuration '%s' not found in databases.cfg", HX_STATS);
 		}
 	}
 }
@@ -713,4 +717,12 @@ public Action HxTimerInfinite18(Handle timer)
 	}
 
 	return Plugin_Continue;
+}
+
+public void OnPluginEnd()
+{
+	if (hg_db)
+	{
+		delete hg_db;
+	}
 }
