@@ -64,7 +64,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.4a",
+	version = "1.4b",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -197,7 +197,7 @@ public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, a
 				if (hg_db)
 				{
 					GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
-					Format(sg_query1, sizeof(sg_query1)-1, "INSERT IGNORE INTO `l4d2_stats` SET `Steamid` = '%s'", sTeamID);
+					Format(sg_query1, sizeof(sg_query1)-1, "INSERT IGNORE INTO `l4d2_stats` (`Steamid`, `Name`) VALUES ('%s', '');", sTeamID);
 					SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0);
 				}
 			}
@@ -228,7 +228,7 @@ public Action HxTimerClientPost(Handle timer, any userid)
 				Spitter, \
 				Tank, \
 				Witch \
-				FROM `l4d2_stats` WHERE `Steamid` = '%s'", sTeamID);
+				FROM `l4d2_stats` WHERE `Steamid` = '%s';", sTeamID);
 
 			SQL_TQuery(hg_db, HxSQLregisterClient, sg_query1, client);
 		}
@@ -271,7 +271,7 @@ public void OnClientDisconnect(int client)
 					Spitter = Spitter + %d, \
 					Tank = Tank + %d, \
 					Witch = Witch + %d \
-					WHERE `Steamid` = '%s'"
+					WHERE `Steamid` = '%s';"
 
 				, ig_temp[client][HX_TIME]
 				, GetTime()
@@ -537,7 +537,7 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 						Spitter = Spitter + %d, \
 						Tank = Tank + %d, \
 						Witch = Witch + %d \
-						WHERE `Steamid` = '%s'"
+						WHERE `Steamid` = '%s';"
 
 					, sName
 					, ig_temp[i][HX_POINTS]
