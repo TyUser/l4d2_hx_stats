@@ -64,7 +64,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.4b",
+	version = "1.4",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -682,9 +682,12 @@ public Action CMD_top(int client, int args)
 						hQuery.FetchString(0, sName, sizeof(sName)-8);
 						iPoints = hQuery.FetchInt(1);
 
-						iNum += 1;
-						Format(sBuffer, sizeof(sBuffer)-1, "%d_ %s  %d Points", iNum, sName, iPoints);
-						hPanel.DrawText(sBuffer);
+						if (iPoints > 0)
+						{
+							iNum += 1;
+							Format(sBuffer, sizeof(sBuffer)-1, "%d_ %s  %d Points", iNum, sName, iPoints);
+							hPanel.DrawText(sBuffer);
+						}
 					}
 
 					delete hQuery;

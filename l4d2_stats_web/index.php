@@ -46,9 +46,12 @@ if ($sg_top50_players === null) {
     if (!empty($aBuf2)) {
         foreach ($aBuf2 as $a) {
             if (!empty($a)) {
-                $sTop50 .= '<tr>';
-                $sTop50 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name'], ENT_QUOTES, 'UTF-8') . '</a></td><td>' . $a['Points'] . '</td>';
-                $sTop50 .= '</tr>';
+                if ($a['Points'] > 0)
+                {
+                    $sTop50 .= '<tr>';
+                    $sTop50 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name'], ENT_QUOTES, 'UTF-8') . '</a></td><td>' . $a['Points'] . '</td>';
+                    $sTop50 .= '</tr>';
+                }
             }
         }
     }
