@@ -42,16 +42,13 @@ $sg_top50_players = $cache->get_string('cache_top50', $config->cache_time * 20);
 if ($sg_top50_players === null) {
     $sTop50 = '';
 
-    $aBuf2 = $sql->query_array('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` ORDER BY `Points` DESC LIMIT 50');
+    $aBuf2 = $sql->query_array('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` WHERE `Points` > 0 ORDER BY `Points` DESC LIMIT 50;');
     if (!empty($aBuf2)) {
         foreach ($aBuf2 as $a) {
             if (!empty($a)) {
-                if ($a['Points'] > 0)
-                {
-                    $sTop50 .= '<tr>';
-                    $sTop50 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name'], ENT_QUOTES, 'UTF-8') . '</a></td><td>' . $a['Points'] . '</td>';
-                    $sTop50 .= '</tr>';
-                }
+                $sTop50 .= '<tr>';
+                $sTop50 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name'], ENT_QUOTES, 'UTF-8') . '</a></td><td>' . $a['Points'] . '</td>';
+                $sTop50 .= '</tr>';
             }
         }
     }

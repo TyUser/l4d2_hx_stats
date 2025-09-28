@@ -672,7 +672,7 @@ public Action CMD_top(int client, int args)
 				hPanel.SetTitle("Top players");
 
 				sg_query4[0] = '\0';
-				Format(sg_query4, sizeof(sg_query4)-1, "SELECT `Name`, `Points` FROM `l4d2_stats` ORDER BY `Points` DESC LIMIT 15");
+				Format(sg_query4, sizeof(sg_query4)-1, "SELECT `Name`, `Points` FROM `l4d2_stats` WHERE `Points` > 0 ORDER BY `Points` DESC LIMIT 15;");
 
 				DBResultSet hQuery = SQL_Query(hg_db, sg_query4);
 				if (hQuery)
@@ -682,12 +682,9 @@ public Action CMD_top(int client, int args)
 						hQuery.FetchString(0, sName, sizeof(sName)-8);
 						iPoints = hQuery.FetchInt(1);
 
-						if (iPoints > 0)
-						{
-							iNum += 1;
-							Format(sBuffer, sizeof(sBuffer)-1, "%d_ %s  %d Points", iNum, sName, iPoints);
-							hPanel.DrawText(sBuffer);
-						}
+						iNum += 1;
+						Format(sBuffer, sizeof(sBuffer)-1, "%d_ %s  %d Points", iNum, sName, iPoints);
+						hPanel.DrawText(sBuffer);
 					}
 
 					delete hQuery;
