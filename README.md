@@ -13,11 +13,12 @@
 * Блокирует команду callvote тем кто имеет меньше 500 Points
 * Команда !rank (в консоли sm_rank) Отображение статистики игрока
 * Команда !top (в консоли sm_top) список top15 игроков
+* Есть web версия отображения статистики игроков
 
-Конвертация старой версии базы данных l4d2_hx_stats_1.2 на l4d2_hx_stats_1.4 (ru):
+Конвертация старой версии базы данных l4d2_hx_stats_1.2 на l4d2_hx_stats_1.4:
 * ALTER TABLE `l4d2_stats` ENGINE = InnoDB, CONVERT TO CHARACTER SET utf8mb4;
 
-===========
+#
 
 Main plugin functions (en):
 * Designed for L4D2 Co-op
@@ -30,6 +31,7 @@ Main plugin functions (en):
 * Blocks the callvote command for players with fewer than 500 Points
 * !rank command (or sm_rank in console): Displays the player's statistics
 * !top command (or sm_top in console): Shows the list of the top 15 players
+* There is a web version for displaying player statistics
 
-Converting the old version of the l4d2_hx_stats_1.2 database to l4d2_hx_stats_1.4 (en):
+Converting the old version of the l4d2_hx_stats_1.2 database to l4d2_hx_stats_1.4:
 * ALTER TABLE `l4d2_stats` ENGINE = InnoDB, CONVERT TO CHARACTER SET utf8mb4;
