@@ -17,6 +17,8 @@
 Конвертация старой версии базы данных l4d2_hx_stats_1.2 на l4d2_hx_stats_1.4 (ru):
 * ALTER TABLE `l4d2_stats` ENGINE = InnoDB, CONVERT TO CHARACTER SET utf8mb4;
 
+===========
+
 Main plugin functions (en):
 * Designed for L4D2 Co-op
 * Tracks the number of killed Common Infected, Boomers, Chargers, Hunters, Jockeys, Smokers, Spitters, Tanks, and Witches.
