@@ -2,7 +2,8 @@
 /*
  *
  * Copyright 2011 - 2025 steamcommunity.com/profiles/76561198025355822/
- * native int HxGetClientPoints(int client); // Получить поинты игрока в стороннем плагине
+ * native int HxGetClientPoints(int client); // Получить поинты игрока
+ * native int HxGetAverageSkill(); // Получить усредненные skill команды
  * Статистика игроков.
  *
 */
@@ -56,6 +57,7 @@ char sg_buf3[40];
 
 int ig_temp[MAXPLAYERS+1][16];
 int ig_real[MAXPLAYERS+1][16];
+int ig_average_skill;
 
 Database hg_db;
 
@@ -64,13 +66,14 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.4",
+	version = "1.5",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	CreateNative("HxGetClientPoints", __HxGetPoints);
+	CreateNative("HxGetAverageSkill", __HxGetSkill);
 	return APLRes_Success;
 }
 
@@ -158,6 +161,11 @@ public int __HxGetPoints(Handle plugin, int numParams)
 	}
 
 	return 0;
+}
+
+public int __HxGetSkill(Handle plugin, int numParams)
+{
+	return ig_average_skill;
 }
 
 public Action HxTimerConnected(Handle timer, any userid)
@@ -301,41 +309,44 @@ int HxColorC(int &client, int iPoints)
 		if (iPoints > 80000)
 		{
 			SetEntityRenderColor(client, 0, 0, 0, 252);
-			return 1;
+			return 10;
 		}
 		if (iPoints > 50000)
 		{
 			SetEntityRenderColor(client, 255, 51, 204, 255);
-			return 1;
+			return 8;
 		}
 		if (iPoints > 20000)
 		{
 			SetEntityRenderColor(client, 164, 79, 25, 255);
-			return 1;
+			return 6;
 		}
 		if (iPoints > 7000)
 		{
 			SetEntityRenderColor(client, 0, 153, 51, 255);
-			return 1;
+			return 5;
 		}
 		if (iPoints > 2000)
 		{
 			SetEntityRenderColor(client, 0, 51, 255, 255);
-			return 1;
+			return 4;
 		}
 		if (iPoints > 500)
 		{
 			SetEntityRenderColor(client, 0, 204, 255, 255);
-			return 1;
+			return 3;
 		}
 	}
 
-	return 0;
+	return 1;
 }
 
 public Action HxTimerR_18(Handle timer)
 {
 	int i = 1;
+	int iNum = 0;
+	int iPoints = 0;
+	int iSkillAll = 0;
 
 	while (i <= MaxClients)
 	{
@@ -343,10 +354,17 @@ public Action HxTimerR_18(Handle timer)
 		{
 			if (!IsFakeClient(i))
 			{
-				HxColorC(i, ig_real[i][HX_POINTS]);
+				iPoints = ig_real[i][HX_POINTS];
+				iSkillAll += HxColorC(i, iPoints);
+				iNum += 1;
 			}
 		}
 		i += 1;
+	}
+
+	if (iNum > 0)
+	{
+		ig_average_skill = iSkillAll/iNum;
 	}
 
 	return Plugin_Stop;
@@ -360,6 +378,8 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 		ig_temp[i][HX_POINTS] = 0;
 		i += 1;
 	}
+
+	ig_average_skill = 1;
 
 	CreateTimer(17.0, HxTimerR_18, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(40.0, HxTimerR_18, _, TIMER_FLAG_NO_MAPCHANGE);
