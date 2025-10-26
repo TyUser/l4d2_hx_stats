@@ -66,7 +66,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.5 SQLite",
+	version = "1.5.1 SQLite",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -626,16 +626,16 @@ public Action CMD_rank(int client, int args)
 			sg_buf1[0] = '\0';
 			Format(sg_buf1, sizeof(sg_buf1)-1
 			 , " Points: %d (%d)\n \
-				- \n \
-				Boomer: %d (%d)\n \
-				Charger: %d (%d)\n \
-				Hunter: %d (%d)\n \
-				Infected: %d (%d)\n \
-				Jockey: %d (%d)\n \
-				Smoker: %d (%d)\n \
-				Spitter: %d (%d)\n \
-				Tank: %d (%d)\n \
-				Witch: %d (%d)"
+ - \n \
+ Boomer: %d (%d)\n \
+ Charger: %d (%d)\n \
+ Hunter: %d (%d)\n \
+ Infected: %d (%d)\n \
+ Jockey: %d (%d)\n \
+ Smoker: %d (%d)\n \
+ Spitter: %d (%d)\n \
+ Tank: %d (%d)\n \
+ Witch: %d (%d)"
 
 				, ig_real[client][HX_POINTS],   ig_temp[client][HX_POINTS]
 				, ig_real[client][HX_BOOMER],   ig_temp[client][HX_BOOMER]
@@ -688,7 +688,7 @@ public Action CMD_top(int client, int args)
 						iPoints = hQuery.FetchInt(1);
 
 						iNum += 1;
-						Format(sBuffer, sizeof(sBuffer)-1, "%d_ %s  %d Points", iNum, sName, iPoints);
+						Format(sBuffer, sizeof(sBuffer)-1, "%d. %s  %d Points", iNum, sName, iPoints);
 						hPanel.DrawText(sBuffer);
 					}
 
