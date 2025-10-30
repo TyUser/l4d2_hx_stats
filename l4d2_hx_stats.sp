@@ -66,7 +66,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.5.1",
+	version = "1.5.2",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -599,6 +599,7 @@ public Action CMD_sqlcreate(int client, int args)
 		if (hg_db)
 		{
 			SQL_TQuery(hg_db, HxDBvoid, HX_CREATE_TABLE, 0);
+			PrintToChat(client, "Creates database table");
 		}
 	}
 
@@ -612,12 +613,22 @@ public Action CMD_keyboard(int client, int args)
 		return Plugin_Continue;
 	}
 
+	if (GetUserFlagBits(client) & ADMFLAG_ROOT)
+	{
+		return Plugin_Continue;
+	}
+
 	return Plugin_Handled;
 }
 
 public Action CMD_callvote(int client, int args)
 {
 	if (ig_real[client][HX_POINTS] > 500)
+	{
+		return Plugin_Continue;
+	}
+
+	if (GetUserFlagBits(client) & ADMFLAG_ROOT)
 	{
 		return Plugin_Continue;
 	}

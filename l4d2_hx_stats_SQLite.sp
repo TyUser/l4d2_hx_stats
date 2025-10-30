@@ -66,7 +66,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.5.1 SQLite",
+	version = "1.5.2 SQLite",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -597,11 +597,21 @@ public Action CMD_keyboard(int client, int args)
 		return Plugin_Continue;
 	}
 
+	if (ig_real[client][HX_POINTS] > 50)
+	{
+		return Plugin_Continue;
+	}
+
 	return Plugin_Handled;
 }
 
 public Action CMD_callvote(int client, int args)
 {
+	if (ig_real[client][HX_POINTS] > 500)
+	{
+		return Plugin_Continue;
+	}
+
 	if (ig_real[client][HX_POINTS] > 500)
 	{
 		return Plugin_Continue;
