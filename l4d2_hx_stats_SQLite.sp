@@ -597,7 +597,7 @@ public Action CMD_keyboard(int client, int args)
 		return Plugin_Continue;
 	}
 
-	if (ig_real[client][HX_POINTS] > 50)
+	if (GetUserFlagBits(client) & ADMFLAG_ROOT)
 	{
 		return Plugin_Continue;
 	}
@@ -612,7 +612,7 @@ public Action CMD_callvote(int client, int args)
 		return Plugin_Continue;
 	}
 
-	if (ig_real[client][HX_POINTS] > 500)
+	if (GetUserFlagBits(client) & ADMFLAG_ROOT)
 	{
 		return Plugin_Continue;
 	}
