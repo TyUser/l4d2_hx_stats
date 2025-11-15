@@ -25,7 +25,6 @@
 #define HX_TANK     9
 #define HX_WITCH    10
 
-#define HX_STATS "l4d2_stats"
 #define HX_CREATE_TABLE "\
 CREATE TABLE IF NOT EXISTS l4d2_stats (\
  Steamid TEXT NOT NULL DEFAULT '',\
@@ -66,7 +65,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.5.4 SQLite",
+	version = "1.5.5 SQLite",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -96,7 +95,7 @@ public void OnPluginStart()
 
 public void HxDBvoid(Handle owner, Handle hndl, const char [] error, any data)
 {
-	if (error[0])
+	if (!hndl)
 	{
 		LogError("SQL Error (Code: %d): %s", data, error);
 	}
@@ -108,14 +107,14 @@ public void OnConfigsExecuted()
 
 	if (!hg_db)
 	{
-		hg_db = SQLite_UseDatabase(HX_STATS, sg_buf2, sizeof(sg_buf2)-1);
+		hg_db = SQLite_UseDatabase("l4d2_stats", sg_buf2, sizeof(sg_buf2)-1);
 		if (!hg_db)
 		{
-			LogError("Failed to connect to database '%s'. Error: %s", HX_STATS, sg_buf2);
+			LogError("Failed to connect to database 'l4d2_stats'. Error: %s", sg_buf2);
 		}
 		else
 		{
-			SQL_TQuery(hg_db, HxDBvoid, HX_CREATE_TABLE, 0);
+			SQL_TQuery(hg_db, HxDBvoid, HX_CREATE_TABLE, 0, DBPrio_Low);
 		}
 	}
 }
@@ -176,38 +175,35 @@ public Action HxTimerConnected(Handle timer, any userid)
 public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, any data)
 {
 	int client = data;
-	if (client)
+	if (IsClientInGame(client))
 	{
-		if (IsClientInGame(client))
+		if (hndl)
 		{
-			if (hndl)
+			if (SQL_FetchRow(hndl))
 			{
-				if (SQL_FetchRow(hndl))
-				{
-					ig_real[client][HX_POINTS]   = SQL_FetchInt(hndl, 0);
-					ig_real[client][HX_TIME]     = SQL_FetchInt(hndl, 1);
-					ig_real[client][HX_BOOMER]   = SQL_FetchInt(hndl, 2);
-					ig_real[client][HX_CHARGER]  = SQL_FetchInt(hndl, 3);
-					ig_real[client][HX_HUNTER]   = SQL_FetchInt(hndl, 4);
-					ig_real[client][HX_INFECTED] = SQL_FetchInt(hndl, 5);
-					ig_real[client][HX_JOCKEY]   = SQL_FetchInt(hndl, 6);
-					ig_real[client][HX_SMOKER]   = SQL_FetchInt(hndl, 7);
-					ig_real[client][HX_SPITTER]  = SQL_FetchInt(hndl, 8);
-					ig_real[client][HX_TANK]     = SQL_FetchInt(hndl, 9);
-					ig_real[client][HX_WITCH]    = SQL_FetchInt(hndl, 10);
+				ig_real[client][HX_POINTS]   = SQL_FetchInt(hndl, 0);
+				ig_real[client][HX_TIME]     = SQL_FetchInt(hndl, 1);
+				ig_real[client][HX_BOOMER]   = SQL_FetchInt(hndl, 2);
+				ig_real[client][HX_CHARGER]  = SQL_FetchInt(hndl, 3);
+				ig_real[client][HX_HUNTER]   = SQL_FetchInt(hndl, 4);
+				ig_real[client][HX_INFECTED] = SQL_FetchInt(hndl, 5);
+				ig_real[client][HX_JOCKEY]   = SQL_FetchInt(hndl, 6);
+				ig_real[client][HX_SMOKER]   = SQL_FetchInt(hndl, 7);
+				ig_real[client][HX_SPITTER]  = SQL_FetchInt(hndl, 8);
+				ig_real[client][HX_TANK]     = SQL_FetchInt(hndl, 9);
+				ig_real[client][HX_WITCH]    = SQL_FetchInt(hndl, 10);
 
-					CreateTimer(7.0, HxTimerConnected, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-				}
-				else
+				CreateTimer(7.0, HxTimerConnected, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+			}
+			else
+			{
+				char sTeamID[24];
+				sg_query1[0] = '\0';
+				if (hg_db)
 				{
-					char sTeamID[24];
-					sg_query1[0] = '\0';
-					if (hg_db)
-					{
-						GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
-						Format(sg_query1, sizeof(sg_query1)-1, "INSERT OR IGNORE INTO l4d2_stats (Steamid, Name) VALUES ('%s', '');", sTeamID);
-						SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0);
-					}
+					GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
+					Format(sg_query1, sizeof(sg_query1)-1, "INSERT OR IGNORE INTO l4d2_stats (Steamid, Name) VALUES ('%s', '');", sTeamID);
+					SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0);
 				}
 			}
 		}
@@ -241,7 +237,7 @@ public Action HxTimerClientPost(Handle timer, any userid)
 					Witch \
 					FROM l4d2_stats WHERE Steamid = '%s';", sTeamID);
 
-				SQL_TQuery(hg_db, HxSQLregisterClient, sg_query1, client);
+				SQL_TQuery(hg_db, HxSQLregisterClient, sg_query1, client, DBPrio_High);
 			}
 		}
 	}
@@ -589,7 +585,6 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 		Txn = null;
 	}
 
-	ig_average_skill = 1;
 	if (hg_db)
 	{
 		delete hg_db;
