@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `l4d2_stats2` (
+CREATE TABLE IF NOT EXISTS `l4d2_stats` (
  `Steamid` varchar(32) NOT NULL DEFAULT '',
  `Name` tinyblob NOT NULL,
  `Points` int(11) NOT NULL DEFAULT '0',

@@ -111,7 +111,7 @@ if ($search !== '') {
 
         $isSteamID = preg_match('/^STEAM_\d+:\d+:\d+$/', $search);
         if ($isSteamID) {
-            $aBuf5 = $sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Steamid` LIKE '" . $search . "'");
+            $aBuf5 = $sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Steamid` LIKE '" . $search . "';");
         }
         else {
             $aBuf5 = $sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Name` LIKE '%" . $search . "%' ORDER BY `Time2` DESC LIMIT 1;");
