@@ -30,6 +30,16 @@ class HxUtils
         return '';
     }
 
+    public function sanitizeString(string $name): string
+    {
+        if ($name) {
+            $sBuf = preg_replace('/[^\p{L}\p{N}:_\-.\s]/u', ' ', $name);
+            return str_replace($this->injectionPatterns, '', $sBuf);
+        }
+
+        return '';
+    }
+
     public function convertSteamId(string $steamId): string
     {
         if (!preg_match('/^STEAM_[0-9]:([0-1]):(\d+)$/', $steamId, $matches)) {
@@ -41,16 +51,6 @@ class HxUtils
 
         $steamId64 = ($accountId * 2) + 0x0110000100000000 + $authServer;
         return 'https://steamcommunity.com/profiles/' . $steamId64;
-    }
-
-    public function sanitizeString(string $name): string
-    {
-        if ($name) {
-            $sBuf = preg_replace('/[^\p{L}\p{N}:_\-\.\s]/u', ' ', $name);
-            return str_replace($this->injectionPatterns, '', $sBuf);
-        }
-
-        return '';
     }
 }
 

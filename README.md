@@ -15,9 +15,6 @@
 * Блокирует команду go_away_from_keyboard тем кто имеет меньше 50 Points.
 * Подсчитывает количество убитых Boomer, Charger, Hunter, Infected, Jockey, Smoker, Spitter, Tank, Witch.
 
-Конвертация старой версии базы данных l4d2_hx_stats_1.2 на l4d2_hx_stats_1.4:
-* ALTER TABLE `l4d2_stats` ENGINE = InnoDB, CONVERT TO CHARACTER SET utf8mb4;
-
 #
 
 Main plugin functions (en):
@@ -32,8 +29,3 @@ Main plugin functions (en):
 * !top command (or sm_top in console): Shows the list of the top 15 players.
 * Blocks the go_away_from_keyboard command for players with fewer than 50 Points.
 * Tracks the number of killed Common Infected, Boomers, Chargers, Hunters, Jockeys, Smokers, Spitters, Tanks, and Witches.
-
-
-
-Converting the old version of the l4d2_hx_stats_1.2 database to l4d2_hx_stats_1.4:
-* ALTER TABLE `l4d2_stats` ENGINE = InnoDB, CONVERT TO CHARACTER SET utf8mb4;
