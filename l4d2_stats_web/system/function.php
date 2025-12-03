@@ -11,10 +11,10 @@ if (!defined('HX_STATS')) {
 
 class HxUtils
 {
+//  '/[^\p{L}\p{N}:_\-\.\s]/u'
 //  \p{L} - Буквы большинства языков мира
 //  \p{N} - Цифры
 //  \s - Пробелы
-    private const ALLOWED_PATTERN = '/[^\p{L}\p{N}:_\-\.\s]/u';
 
     private array $injectionPatterns = array('AND'
     , 'DELETE', 'DROP', 'EXEC', 'FROM', 'INSERT', 'OR'
@@ -23,7 +23,7 @@ class HxUtils
     public function sanitizeGetParameter(string $paramName): string
     {
         if (isset($_GET[$paramName])) {
-            $cleanValue = preg_replace(self::ALLOWED_PATTERN, '', $_GET[$paramName]);
+            $cleanValue = $this->sanitizeString($_GET[$paramName]);
             return substr($cleanValue, 0, 64);
         }
 
@@ -46,8 +46,8 @@ class HxUtils
     public function sanitizeString(string $name): string
     {
         if ($name) {
-            $sBuf = preg_replace(self::ALLOWED_PATTERN, ' ', $name);
-            return str_replace($this->injectionPatterns, ' ', $sBuf);
+            $sBuf = preg_replace('/[^\p{L}\p{N}:_\-\.\s]/u', ' ', $name);
+            return str_replace($this->injectionPatterns, '', $sBuf);
         }
 
         return '';
