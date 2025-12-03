@@ -11,7 +11,7 @@ if (!defined('HX_STATS')) {
 
 class HxUtils
 {
-//  '/[^\p{L}\p{N}:_\-\.\s]/u'
+//  '/[^\p{L}\p{N}:_\-.\s]/u'
 //  \p{L} - Буквы большинства языков мира
 //  \p{N} - Цифры
 //  \s - Пробелы
@@ -24,7 +24,7 @@ class HxUtils
     {
         if (isset($_GET[$paramName])) {
             $cleanValue = $this->sanitizeString($_GET[$paramName]);
-            return substr($cleanValue, 0, 64);
+            return mb_substr($cleanValue, 0, 64, 'UTF-8');
         }
 
         return '';
@@ -32,7 +32,7 @@ class HxUtils
 
     public function sanitizeString(string $name): string
     {
-        if ($name) {
+        if ($name !== '') {
             $sBuf = preg_replace('/[^\p{L}\p{N}:_\-.\s]/u', ' ', $name);
             return str_replace($this->injectionPatterns, '', $sBuf);
         }
@@ -42,7 +42,7 @@ class HxUtils
 
     public function convertSteamId(string $steamId): string
     {
-        if (!preg_match('/^STEAM_[0-9]:([0-1]):(\d+)$/', $steamId, $matches)) {
+        if (!preg_match('/^STEAM_[0-5]:([0-1]):(\d+)$/', $steamId, $matches)) {
             return '';
         }
 
