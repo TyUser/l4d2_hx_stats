@@ -64,7 +64,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.5.6",
+	version = "1.5.7",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -162,7 +162,7 @@ public int __HxGetPoints(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	if (client > 0)
 	{
-		if (client < 32)
+		if (client <= MaxClients)
 		{
 			return ig_real[client][HX_POINTS];
 		}
