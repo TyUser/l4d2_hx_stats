@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-/*
+/**
  *
  * Copyright 2011 - 2026 steamcommunity.com/profiles/76561198025355822/
  * native int HxGetClientPoints(int client); // Получить поинты игрока
@@ -25,6 +25,11 @@
 #define HX_TANK     9
 #define HX_WITCH    10
 
+#define HX_32_SIZE   32
+#define HX_64_SIZE   64
+#define HX_128_SIZE  128
+#define HX_1024_SIZE 1024
+
 #define HX_CREATE_TABLE "\
 CREATE TABLE IF NOT EXISTS `l4d2_stats` (\
  `Steamid` varchar(32) NOT NULL,\
@@ -45,13 +50,13 @@ CREATE TABLE IF NOT EXISTS `l4d2_stats` (\
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\
 "
 
-char sg_query1[1024];
-char sg_query2[1024];
-char sg_query3[1024];
-char sg_query4[1024];
+char sg_query1[HX_1024_SIZE];
+char sg_query2[HX_1024_SIZE];
+char sg_query3[HX_1024_SIZE];
+char sg_query4[HX_1024_SIZE];
 
-char sg_buf1[512];
-char sg_buf3[40];
+char sg_buf1[HX_1024_SIZE];
+char sg_buf3[HX_128_SIZE];
 
 int ig_temp[MAXPLAYERS+1][16];
 int ig_real[MAXPLAYERS+1][16];
@@ -64,7 +69,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.5.7",
+	version = "1.5.8",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -208,7 +213,7 @@ public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, a
 			}
 			else
 			{
-				char sTeamID[24];
+				char sTeamID[HX_32_SIZE];
 				sg_query1[0] = '\0';
 				if (hg_db)
 				{
@@ -230,7 +235,7 @@ public Action HxTimerClientPost(Handle timer, any userid)
 		{
 			if (hg_db)
 			{
-				char sTeamID[24];
+				char sTeamID[HX_32_SIZE];
 				sg_query1[0] = '\0';
 				GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
 				Format(sg_query1, sizeof(sg_query1)-1
@@ -273,7 +278,7 @@ public void OnClientDisconnect(int client)
 		{
 			if (hg_db)
 			{
-				char sTeamID[24];
+				char sTeamID[HX_32_SIZE];
 
 				sg_query2[0] = '\0';
 				GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
@@ -532,8 +537,9 @@ void HxProtect(char[] sBuf)
 
 public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 {
-	char sName[32];
-	char sTeamID[24];
+	char sBuffer[HX_128_SIZE];
+	char sName[HX_64_SIZE];
+	char sTeamID[HX_32_SIZE];
 	int i = 1;
 
 	if (hg_db)
@@ -550,7 +556,9 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 
 					GetClientName(i, sName, sizeof(sName)-8);
 					GetClientAuthId(i, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
+
 					HxProtect(sName);
+					hg_db.Escape(sName, sBuffer, sizeof(sBuffer)-1);
 
 					Format(sg_query3, sizeof(sg_query3)-1
 					 , "UPDATE `l4d2_stats` SET \
@@ -569,7 +577,7 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 						Witch = Witch + %d \
 						WHERE `Steamid` = '%s';"
 
-					, sName
+					, sBuffer
 					, ig_temp[i][HX_POINTS]
 					, ig_temp[i][HX_TIME]
 					, GetTime()
@@ -598,6 +606,11 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 
 	if (hg_db)
 	{
+	/*
+		Исправляет баг с потерей соединения, при многодневной работе л4д2 сервера без перезагрузки.
+		При обрывах соединения с удаленной базой данной соединение зависает.
+		Переодическое закрытие соединения с авто подключением в начале следующей карты решает данную проблему.
+	*/
 		delete hg_db;
 	}
 }
@@ -697,8 +710,8 @@ public Action CMD_rank(int client, int args)
 
 public Action CMD_top(int client, int args)
 {
-	char sBuffer[128];
-	char sName[32];
+	char sBuffer[HX_128_SIZE];
+	char sName[HX_64_SIZE];
 
 	int iPoints = 0;
 	int iNum = 0;
