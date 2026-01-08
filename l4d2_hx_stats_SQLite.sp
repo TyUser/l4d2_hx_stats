@@ -202,11 +202,12 @@ public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, a
 			}
 			else
 			{
-				char sTeamID[HX_32_SIZE];
-				sg_query1[0] = '\0';
 				if (hg_db)
 				{
+					char sTeamID[HX_32_SIZE];
 					GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
+
+					sg_query1[0] = '\0';
 					Format(sg_query1, sizeof(sg_query1)-1, "INSERT OR IGNORE INTO l4d2_stats (Steamid, Name) VALUES ('%s', '');", sTeamID);
 					SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0);
 				}
@@ -225,8 +226,9 @@ public Action HxTimerClientPost(Handle timer, any userid)
 			if (hg_db)
 			{
 				char sTeamID[HX_32_SIZE];
-				sg_query1[0] = '\0';
 				GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
+
+				sg_query1[0] = '\0';
 				Format(sg_query1, sizeof(sg_query1)-1
 				 , "SELECT \
 					Points, \
@@ -268,9 +270,9 @@ public void OnClientDisconnect(int client)
 			if (hg_db)
 			{
 				char sTeamID[HX_32_SIZE];
+				GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
 
 				sg_query2[0] = '\0';
-				GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
 				Format(sg_query2, sizeof(sg_query2)-1
 				 , "UPDATE l4d2_stats SET \
 					Time1 = Time1 + %d, \
@@ -541,6 +543,8 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 				if (!IsFakeClient(i))
 				{
 					sName[0] = '\0';
+					sTeamID[0] = '\0';
+					sBuffer[0] = '\0';
 					sg_query3[0] = '\0';
 
 					GetClientName(i, sName, sizeof(sName)-8);
@@ -704,6 +708,9 @@ public Action CMD_top(int client, int args)
 				{
 					while (hQuery.FetchRow())
 					{
+						sName[0] = '\0';
+						sBuffer[0] = '\0';
+
 						hQuery.FetchString(0, sName, sizeof(sName)-8);
 						iPoints = hQuery.FetchInt(1);
 
