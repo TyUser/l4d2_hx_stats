@@ -135,7 +135,7 @@ public void OnConfigsExecuted()
 	}
 }
 
-void HxClean(int &client)
+void HxClean(int client)
 {
 	ig_temp[client][HX_POINTS]   = 0;
 	ig_temp[client][HX_TIME]     = 0;
@@ -320,7 +320,7 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-int HxColorC(int &client, int iPoints)
+int HxColorC(int client, int iPoints)
 {
 	if (IsPlayerAlive(client))
 	{
@@ -611,9 +611,8 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 	if (hg_db)
 	{
 	/*
-		Исправляет баг с потерей соединения, при многодневной работе л4д2 сервера без перезагрузки.
-		При обрывах соединения с удаленной базой данной соединение зависает.
-		Переодическое закрытие соединения с авто подключением в начале следующей карты решает данную проблему.
+		Исправляет зависание соединения с базой данных при длительной работе сервера L4D2.
+		Проблема решается автоматическим переподключением в начале каждой карты.
 	*/
 		delete hg_db;
 	}

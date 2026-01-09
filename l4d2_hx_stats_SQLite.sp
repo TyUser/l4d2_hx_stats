@@ -124,7 +124,7 @@ public void OnConfigsExecuted()
 	}
 }
 
-void HxClean(int &client)
+void HxClean(int client)
 {
 	ig_temp[client][HX_POINTS]   = 0;
 	ig_temp[client][HX_TIME]     = 0;
@@ -309,7 +309,7 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-int HxColorC(int &client, int iPoints)
+int HxColorC(int client, int iPoints)
 {
 	if (IsPlayerAlive(client))
 	{
