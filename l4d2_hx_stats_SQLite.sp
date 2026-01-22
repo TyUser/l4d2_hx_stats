@@ -70,7 +70,7 @@ public Plugin myinfo =
 	name = "[L4D2] hx_stats",
 	author = "MAKS",
 	description = "L4D2 Coop Stats",
-	version = "1.5.8 SQLite",
+	version = "1.5.9 SQLite",
 	url = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -102,7 +102,7 @@ public void HxDBvoid(Handle owner, Handle hndl, const char [] error, any data)
 {
 	if (!hndl)
 	{
-		LogError("SQL Error (Code: %d): %s", data, error);
+		LogError("SQL Error: %s", error);
 	}
 }
 
@@ -110,17 +110,19 @@ public void OnConfigsExecuted()
 {
 	ig_average_skill = 1;
 
+	if (hg_db)
+	{
+		delete hg_db;
+	}
+
+	hg_db = SQLite_UseDatabase("l4d2_stats", sg_buf2, sizeof(sg_buf2)-1);
 	if (!hg_db)
 	{
-		hg_db = SQLite_UseDatabase("l4d2_stats", sg_buf2, sizeof(sg_buf2)-1);
-		if (!hg_db)
-		{
-			LogError("Failed to connect to database 'l4d2_stats'. Error: %s", sg_buf2);
-		}
-		else
-		{
-			SQL_TQuery(hg_db, HxDBvoid, HX_CREATE_TABLE, 0, DBPrio_Low);
-		}
+		LogError("Failed to connect to database 'l4d2_stats'. Error: %s", sg_buf2);
+	}
+	else
+	{
+		SQL_TQuery(hg_db, HxDBvoid, HX_CREATE_TABLE, 0, DBPrio_High);
 	}
 }
 
@@ -528,7 +530,7 @@ void HxProtect(char[] sBuf)
 
 public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 {
-	char sBuffer[HX_128_SIZE];
+	char sEscName[HX_128_SIZE];
 	char sName[HX_64_SIZE];
 	char sTeamID[HX_32_SIZE];
 	int i = 1;
@@ -544,14 +546,14 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 				{
 					sName[0] = '\0';
 					sTeamID[0] = '\0';
-					sBuffer[0] = '\0';
+					sEscName[0] = '\0';
 					sg_query3[0] = '\0';
 
 					GetClientName(i, sName, sizeof(sName)-8);
 					GetClientAuthId(i, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
 
 					HxProtect(sName);
-					hg_db.Escape(sName, sBuffer, sizeof(sBuffer)-1);
+					hg_db.Escape(sName, sEscName, sizeof(sEscName)-1);
 
 					Format(sg_query3, sizeof(sg_query3)-1
 					 , "UPDATE l4d2_stats SET \
@@ -570,7 +572,7 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 						Witch = Witch + %d \
 						WHERE Steamid = '%s';"
 
-					, sBuffer
+					, sEscName
 					, ig_temp[i][HX_POINTS]
 					, ig_temp[i][HX_TIME]
 					, GetTime()
@@ -595,11 +597,6 @@ public void Event_SQL_Save(Event event, const char[] name, bool dontBroadcast)
 
 		SQL_ExecuteTransaction(hg_db, Txn, _, _, _, DBPrio_High);
 		Txn = null;
-	}
-
-	if (hg_db)
-	{
-		delete hg_db;
 	}
 }
 
