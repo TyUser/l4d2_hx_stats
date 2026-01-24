@@ -232,7 +232,7 @@ public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, a
 public Action HxTimerClientPost(Handle timer, any userid)
 {
 	int client = GetClientOfUserId(userid);
-	if (client)
+	if (client > 0)
 	{
 		if (IsClientInGame(client))
 		{
