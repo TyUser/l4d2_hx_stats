@@ -74,7 +74,7 @@ class Class_mysqli
         $this->hSQL->close();
     }
 
-    public function query_array($query): array
+    public function query_array(string $query): array
     {
         $result = $this->hSQL->query($query);
 
