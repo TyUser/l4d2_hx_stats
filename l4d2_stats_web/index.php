@@ -1,6 +1,7 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
+//declare(strict_types=1);
 //error_reporting(E_ALL);
 //ini_set('display_errors', 1);
 //ini_set('display_startup_errors', 1);
@@ -13,7 +14,7 @@ require __DIR__ . '/system/L4D2ServerQuery.php';
 $cache = new Cache();
 $utils = new HxUtils();
 $config = new AppConfig();
-$sql = new Class_mysqli($config->host, $config->user, $config->password, $config->database);
+$sql = new hxDatabase($config->host, $config->user, $config->password, $config->database);
 
 $search = $utils->sanitizeGetParameter('f');
 
@@ -42,7 +43,7 @@ $sg_top50_players = $cache->get_string('cache_top50', $config->cache_time * 20);
 if ($sg_top50_players === null) {
     $sTop50 = '';
 
-    $aBuf2 = $sql->query_array('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` WHERE `Points` > 0 ORDER BY `Points` DESC LIMIT 50;');
+    $aBuf2 = $sql->query('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` WHERE `Points` > 0 ORDER BY `Points` DESC LIMIT 50;');
     if (!empty($aBuf2)) {
         foreach ($aBuf2 as $a) {
             if (!empty($a)) {
@@ -73,9 +74,9 @@ if ($sg_server_players === null) {
                 $sBuf3 .= '<tr>';
                 $sName = $utils->sanitizeString($a['Name']);
                 if ($sName) {
-                    $aBuf4 = $sql->query_array("SELECT `Steamid` FROM `l4d2_stats` WHERE `Name` LIKE '" . $sName . "' ORDER BY `Time2` DESC LIMIT 1;");
+                    $aBuf4 = $sql->query("SELECT `Steamid` FROM `l4d2_stats` WHERE `Name` LIKE ? ORDER BY `Time2` DESC LIMIT 1;", [$sName]);
 
-                    if (isset ($aBuf4[0]["Steamid"])) {
+                    if (!empty($aBuf4[0]["Steamid"])) {
                         $sBuf3 .= '<td><a href="index.php?f=' . $aBuf4[0]["Steamid"] . '" class="link-dark">' . htmlspecialchars($sName, ENT_QUOTES, 'UTF-8') . '</a></td>';
                     }
                     else {
@@ -86,14 +87,17 @@ if ($sg_server_players === null) {
                     $sBuf3 .= '<td>Anonymous</td>';
                 }
 
-                $sBuf3 .= '<td>' . $a['Frags'] . '</td>';
+                $sBuf3 .= '<td>' . (int)$a['Frags'] . '</td>';
                 $sBuf3 .= '<td>' . $a['TimeF'] . '</td>';
                 $sBuf3 .= '</tr>';
             }
         }
     }
 
-    $sg_server_players = '<table class="table"><thead><tr><th scope="col">Players ' . $serverInfo["Players"] . '/' . $serverInfo["MaxPlayers"] . '</th><th scope="col">Frags</th><th scope="col">Time in game</th></tr></thead><tbody>';
+    $playersCount = (int)($serverInfo["Players"] ?? 0);
+    $maxPlayers = (int)($serverInfo["MaxPlayers"] ?? 0);
+
+    $sg_server_players = '<table class="table"><thead><tr><th scope="col">Players ' . $playersCount . '/' . $maxPlayers . '</th><th scope="col">Frags</th><th scope="col">Time in game</th></tr></thead><tbody>';
     $sg_server_players .= $sBuf3;
     $sg_server_players .= '</tbody></table>';
     unset($sBuf3, $sName);
@@ -109,38 +113,42 @@ if ($search !== '') {
         $player = '';
         $aBuf5 = [];
 
-        $isSteamID = preg_match('/^STEAM_\d+:\d+:\d+$/', $search);
-        if ($isSteamID) {
-            $aBuf5 = $sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Steamid` LIKE '" . $search . "';");
+        $isSteamID = $utils->validateSteamIdFormat($search);
+        if ($isSteamID > 0) {
+            $aBuf5 = $sql->query("SELECT * FROM `l4d2_stats` WHERE `Steamid` = ?;", [$search]);
         }
         else {
-            $aBuf5 = $sql->query_array("SELECT * FROM `l4d2_stats` WHERE `Name` LIKE '%" . $search . "%' ORDER BY `Time2` DESC LIMIT 1;");
+            $searchTerm = "%" . $search . "%";
+            $aBuf5 = $sql->query("SELECT * FROM `l4d2_stats` WHERE `Name` LIKE ? ORDER BY `Time2` DESC LIMIT 1;", [$searchTerm]);
         }
 
-        if (!empty($aBuf5)) {
-            $player = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . $utils->convertSteamId($aBuf5['0']['Steamid']) . '">' . htmlspecialchars($aBuf5['0']['Name']) . '</a></th><th scope="col"></th></tr></thead><tbody>';
+        if (!empty($aBuf5) && isset($aBuf5[0])) {
+            $player = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . $utils->convertSteamId($aBuf5[0]['Steamid']) . '">' . htmlspecialchars($aBuf5[0]['Name']) . '</a></th><th scope="col"></th></tr></thead><tbody>';
 
-            $player .= '<tr><td>Points: </td><td>' . $aBuf5['0']['Points'] . '</td></tr>';
-            $player .= '<tr><td>Boomer: </td><td>' . $aBuf5['0']['Boomer'] . '</td></tr>';
-            $player .= '<tr><td>Charger: </td><td>' . $aBuf5['0']['Charger'] . '</td></tr>';
-            $player .= '<tr><td>Hunter: </td><td>' . $aBuf5['0']['Hunter'] . '</td></tr>';
-            $player .= '<tr><td>Infected: </td><td>' . $aBuf5['0']['Infected'] . '</td></tr>';
-            $player .= '<tr><td>Jockey: </td><td>' . $aBuf5['0']['Jockey'] . '</td></tr>';
-            $player .= '<tr><td>Smoker: </td><td>' . $aBuf5['0']['Smoker'] . '</td></tr>';
-            $player .= '<tr><td>Spitter: </td><td>' . $aBuf5['0']['Spitter'] . '</td></tr>';
+            $player .= '<tr><td>Points: </td><td>' . (int)$aBuf5[0]['Points'] . '</td></tr>';
+            $player .= '<tr><td>Boomer: </td><td>' . (int)$aBuf5[0]['Boomer'] . '</td></tr>';
+            $player .= '<tr><td>Charger: </td><td>' . (int)$aBuf5[0]['Charger'] . '</td></tr>';
+            $player .= '<tr><td>Hunter: </td><td>' . (int)$aBuf5[0]['Hunter'] . '</td></tr>';
+            $player .= '<tr><td>Infected: </td><td>' . (int)$aBuf5[0]['Infected'] . '</td></tr>';
+            $player .= '<tr><td>Jockey: </td><td>' . (int)$aBuf5[0]['Jockey'] . '</td></tr>';
+            $player .= '<tr><td>Smoker: </td><td>' . (int)$aBuf5[0]['Smoker'] . '</td></tr>';
+            $player .= '<tr><td>Spitter: </td><td>' . (int)$aBuf5[0]['Spitter'] . '</td></tr>';
 
-            $iTimeAll = (int)($aBuf5['0']['Time1'] / 60);
+            $iTimeAll = (int)($aBuf5[0]['Time1'] / 60);
 
-            $player .= '<tr><td>Tank: </td><td>' . $aBuf5['0']['Tank'] . '</td></tr>';
-            $player .= '<tr><td>Witch: </td><td>' . $aBuf5['0']['Witch'] . '</td></tr>';
+            $player .= '<tr><td>Tank: </td><td>' . (int)$aBuf5[0]['Tank'] . '</td></tr>';
+            $player .= '<tr><td>Witch: </td><td>' . (int)$aBuf5[0]['Witch'] . '</td></tr>';
             $player .= '<tr><td>Total game time: </td><td>' . $iTimeAll . ' (hour..)</td></tr>';
-            $player .= '<tr><td>Last visit: </td><td>' . date('d.m.Y', (int)$aBuf5['0']['Time2']) . '</td></tr>';
+            $player .= '<tr><td>Last visit: </td><td>' . date('d.m.Y', (int)$aBuf5[0]['Time2']) . '</td></tr>';
             $player .= '</tbody></table>';
         }
         else {
             $player = '<table class="table"><thead><tr><th scope="col">Player: ';
-            if ($isSteamID) {
+            if ($isSteamID == 1) {
                 $player .= '<a class="link-dark" target="_blank" href="' . $utils->convertSteamId($search) . '">' . htmlspecialchars($search, ENT_QUOTES, 'UTF-8') . '</a>';
+            }
+            else if ($isSteamID == 2) {
+                $player .= htmlspecialchars($search, ENT_QUOTES, 'UTF-8');
             }
             else {
                 $player .= 'Player not found';

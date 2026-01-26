@@ -16,10 +16,6 @@ class HxUtils
 //  \p{N} - Цифры
 //  \s - Пробелы
 
-    private const INJECTION_PATTERNS = ['AND'
-    , 'DELETE', 'DROP', 'EXEC', 'FROM', 'INSERT', 'OR'
-    , 'SELECT', 'TRUNCATE', 'UNION', 'UPDATE'];
-
     public function sanitizeGetParameter(string $paramName): string
     {
         if (isset($_GET[$paramName])) {
@@ -34,7 +30,8 @@ class HxUtils
     {
         if ($name !== '') {
             $sBuf = preg_replace('/[^\p{L}\p{N}:_\-.\s]/u', ' ', $name);
-            return str_replace(self::INJECTION_PATTERNS, '', $sBuf);
+            $sBuf = preg_replace('/\s+/', ' ', $sBuf);
+            return trim($sBuf);
         }
 
         return '';
@@ -52,43 +49,99 @@ class HxUtils
         $steamId64 = ($accountId * 2) + 0x0110000100000000 + $authServer;
         return 'https://steamcommunity.com/profiles/' . $steamId64;
     }
+
+    public function validateSteamIdFormat(string $steamId): int
+    {
+        if (preg_match('/^STEAM_\d+:\d+:\d+$/', $steamId)) {
+            return 1;
+        }
+
+        if (preg_match('/^STEAM_old_\d+:\d+:\d+$/', $steamId)) {
+            return 2;
+        }
+
+        return 0;
+    }
 }
 
-class Class_mysqli
+class hxDatabase
 {
-    private mysqli $hSQL;
+    private mysqli $mysqli;
 
     public function __construct(string $host, string $user, string $pass, string $db)
     {
-        $this->hSQL = new mysqli($host, $user, $pass, $db);
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        try {
+            $this->mysqli = new mysqli($host, $user, $pass, $db);
+            $this->mysqli->set_charset('utf8mb4');
+        } catch (mysqli_sql_exception $e) {
+            throw new RuntimeException("Connection failed: " . $e->getMessage(), (int)$e->getCode());
+        }
+    }
 
-        if ($this->hSQL->connect_error) {
-            throw new RuntimeException("MySQL connection error: " . $this->hSQL->connect_error);
+    public function query(string $query, array $params = []): array|int
+    {
+        $stmt = $this->mysqli->prepare($query);
+
+        if (!empty($params)) {
+            $types = '';
+            foreach ($params as $param) {
+                $types .= $this->getParamType($param);
+            }
+
+            $stmt->bind_param($types, ...$params);
         }
 
-        $this->hSQL->set_charset('utf8mb4');
-    }
-
-    public function __destruct()
-    {
-        $this->hSQL->close();
-    }
-
-    public function query_array(string $query): array
-    {
-        $result = $this->hSQL->query($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
         if ($result === false) {
-            throw new RuntimeException("Query error: " . $this->hSQL->error);
+            $affectedRows = $stmt->affected_rows;
+            $stmt->close();
+            return $affectedRows;
         }
 
-        $resultArray = [];
-        while ($row = $result->fetch_assoc()) {
-            $resultArray[] = $row;
-        }
-
+        $data = $result->fetch_all(MYSQLI_ASSOC);
         $result->free();
-        return $resultArray;
+        $stmt->close();
+
+        return $data;
+    }
+
+    private function getParamType(mixed $value): string
+    {
+        if (is_int($value) || is_bool($value)) {
+            return 'i';
+        }
+        if (is_float($value)) {
+            return 'd';
+        }
+
+        return 's';
+    }
+
+    // идентификатор (ID) последней вставленной записи
+    public function lastInsertId(): int
+    {
+        return $this->mysqli->insert_id;
+    }
+
+    // начинает новую транзакцию
+    public function beginTransaction(): void
+    {
+        $this->mysqli->begin_transaction();
+    }
+
+    // подтверждает транзакцию
+    public function commit(): void
+    {
+        $this->mysqli->commit();
+    }
+
+    // отменяет транзакцию
+    public function rollback(): void
+    {
+        $this->mysqli->rollback();
     }
 }
 
