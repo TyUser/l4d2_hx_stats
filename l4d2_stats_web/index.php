@@ -133,7 +133,12 @@ if ($search !== '') {
         }
 
         if (!empty($aBuf5) && isset($aBuf5[0])) {
-            $player = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . $utils->convertSteamId($aBuf5[0]['Steamid']) . '">' . htmlspecialchars($aBuf5[0]['Name']) . '</a></th><th scope="col"></th></tr></thead><tbody>';
+            if ($isSteamID == 1) {
+                $player = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . $utils->convertSteamId($aBuf5[0]['Steamid']) . '">' . htmlspecialchars($aBuf5[0]['Name']) . '</a></th><th scope="col"></th></tr></thead><tbody>';
+            }
+            else if ($isSteamID == 2) {
+                $player = '<table class="table"><thead><tr><th scope="col">Player: ' . htmlspecialchars($aBuf5[0]['Name']) . '</th><th scope="col"></th></tr></thead><tbody>';
+            }
 
             $player .= '<tr><td>Points: </td><td>' . (int)$aBuf5[0]['Points'] . '</td></tr>';
             $player .= '<tr><td>Boomer: </td><td>' . (int)$aBuf5[0]['Boomer'] . '</td></tr>';
@@ -154,11 +159,8 @@ if ($search !== '') {
         }
         else {
             $player = '<table class="table"><thead><tr><th scope="col">Player: ';
-            if ($isSteamID == 1) {
+            if ($isSteamID) {
                 $player .= '<a class="link-dark" target="_blank" href="' . $utils->convertSteamId($search) . '">' . htmlspecialchars($search, ENT_QUOTES, 'UTF-8') . '</a>';
-            }
-            else if ($isSteamID == 2) {
-                $player .= htmlspecialchars($search, ENT_QUOTES, 'UTF-8');
             }
             else {
                 $player .= 'Player not found';
