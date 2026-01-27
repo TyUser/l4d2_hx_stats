@@ -35,13 +35,14 @@ if ($serverInfo === null) {
     $cache->set_array('cache_player_list', $players);
 }
 
-$serverName = $serverInfo["HostName"];
-$mapName = $serverInfo["Map"];
+$serverName = $serverInfo["HostName"] ?? '';
+$mapName = $serverInfo["Map"] ?? '';
 
 // Получаем список топ 50 игроков
 $sg_top50_players = $cache->get_string('cache_top50', $config->cache_time * 20);
 if ($sg_top50_players === null) {
     $sTop50 = '';
+    $processedPlayers = 0;
 
     $aBuf2 = $sql->query('SELECT `Steamid`, `Name`, `Points` FROM `l4d2_stats` WHERE `Points` > 0 ORDER BY `Points` DESC LIMIT 50;');
     if (!empty($aBuf2)) {
@@ -50,6 +51,8 @@ if ($sg_top50_players === null) {
                 $sTop50 .= '<tr>';
                 $sTop50 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name'], ENT_QUOTES, 'UTF-8') . '</a></td><td>' . $a['Points'] . '</td>';
                 $sTop50 .= '</tr>';
+
+                $processedPlayers += 1;
             }
         }
     }
@@ -59,7 +62,9 @@ if ($sg_top50_players === null) {
     $sg_top50_players .= '</tbody></table>';
     unset($sTop50, $aBuf2);
 
-    $cache->set_string('cache_top50', $sg_top50_players);
+    if ($processedPlayers > 0) {
+        $cache->set_string('cache_top50', $sg_top50_players);
+    }
 }
 
 // Получаем и кэшируем список игроков на сервере
@@ -67,6 +72,7 @@ $sg_server_players = $cache->get_string('cache_players', $config->cache_time);
 if ($sg_server_players === null) {
     $sBuf3 = '';
     $sName = '';
+    $processedPlayers = 0;
 
     if (!empty($players)) {
         foreach ($players as $a) {
@@ -90,6 +96,8 @@ if ($sg_server_players === null) {
                 $sBuf3 .= '<td>' . (int)$a['Frags'] . '</td>';
                 $sBuf3 .= '<td>' . $a['TimeF'] . '</td>';
                 $sBuf3 .= '</tr>';
+
+                $processedPlayers += 1;
             }
         }
     }
@@ -102,7 +110,9 @@ if ($sg_server_players === null) {
     $sg_server_players .= '</tbody></table>';
     unset($sBuf3, $sName);
 
-    $cache->set_string('cache_players', $sg_server_players);
+    if ($processedPlayers > 0) {
+        $cache->set_string('cache_players', $sg_server_players);
+    }
 }
 
 // Проверяем поиск
