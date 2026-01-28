@@ -41,7 +41,7 @@ if (!empty($players2)) {
         $name = htmlspecialchars($player['Name'], ENT_QUOTES, 'UTF-8');
         $name = $name ?: 'Anonymous';
 
-        $playersTable .= '<tr>' . '<td>' . $name . '</td>' . '<td>' . $player['Frags'] . '</td>' . '<td>' . $player['TimeF'] . '</td>' . '</tr>';
+        $playersTable .= '<tr>' . '<td>' . $name . '</td>' . '<td>' . (int)$player['Frags'] . '</td>' . '<td>' . $player['TimeF'] . '</td>' . '</tr>';
     }
 }
 

@@ -49,7 +49,7 @@ if ($sg_top50_players === null) {
         foreach ($aBuf2 as $a) {
             if (!empty($a)) {
                 $sTop50 .= '<tr>';
-                $sTop50 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name'], ENT_QUOTES, 'UTF-8') . '</a></td><td>' . $a['Points'] . '</td>';
+                $sTop50 .= '<td><a href="index.php?f=' . $a['Steamid'] . '" class="link-dark">' . htmlspecialchars($a['Name'], ENT_QUOTES, 'UTF-8') . '</a></td><td>' . (int)$a['Points'] . '</td>';
                 $sTop50 .= '</tr>';
 
                 $processedPlayers += 1;
