@@ -1,6 +1,7 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
+//declare(strict_types=1);
 //error_reporting(E_ALL);
 //ini_set('display_errors', 1);
 //ini_set('display_startup_errors', 1);
@@ -28,8 +29,8 @@ if ($serverInfo2 === null) {
     $cache->set_array('cache_player_list2', $players2);
 }
 
-$serverName = $serverInfo2["HostName"];
-$mapName = $serverInfo2["Map"];
+$serverName = $serverInfo2["HostName"] ?? '';
+$mapName = $serverInfo2["Map"] ?? '';
 
 $playersTable = '<table class="table"><thead><tr>' . '<th scope="col">Players ' . $serverInfo2["Players"] . '/' . $serverInfo2["MaxPlayers"] . '</th>' . '<th scope="col">Frags</th>' . '<th scope="col">Time in game</th>' . '</tr></thead><tbody>';
 
