@@ -70,7 +70,7 @@ public Plugin myinfo =
     name        = "[L4D2] hx_stats",
     author      = "MAKS",
     description = "L4D2 Coop Stats",
-    version     = "1.5.9 SQLite",
+    version     = "1.6 SQLite",
     url         = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -181,37 +181,40 @@ public Action HxTimerConnected(Handle timer, any userid)
 
 public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, any data)
 {
-    int client = data;
-    if (IsClientInGame(client))
+    int client = GetClientOfUserId(data);
+    if (client > 0)
     {
-        if (hndl)
+        if (IsClientInGame(client))
         {
-            if (SQL_FetchRow(hndl))
+            if (hndl)
             {
-                ig_real[client][HX_POINTS]   = SQL_FetchInt(hndl, 0);
-                ig_real[client][HX_TIME]     = SQL_FetchInt(hndl, 1);
-                ig_real[client][HX_BOOMER]   = SQL_FetchInt(hndl, 2);
-                ig_real[client][HX_CHARGER]  = SQL_FetchInt(hndl, 3);
-                ig_real[client][HX_HUNTER]   = SQL_FetchInt(hndl, 4);
-                ig_real[client][HX_INFECTED] = SQL_FetchInt(hndl, 5);
-                ig_real[client][HX_JOCKEY]   = SQL_FetchInt(hndl, 6);
-                ig_real[client][HX_SMOKER]   = SQL_FetchInt(hndl, 7);
-                ig_real[client][HX_SPITTER]  = SQL_FetchInt(hndl, 8);
-                ig_real[client][HX_TANK]     = SQL_FetchInt(hndl, 9);
-                ig_real[client][HX_WITCH]    = SQL_FetchInt(hndl, 10);
-
-                CreateTimer(7.0, HxTimerConnected, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-            }
-            else
-            {
-                if (hg_db)
+                if (SQL_FetchRow(hndl))
                 {
-                    char sTeamID[HX_32_SIZE];
-                    GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID) - 1);
+                    ig_real[client][HX_POINTS]   = SQL_FetchInt(hndl, 0);
+                    ig_real[client][HX_TIME]     = SQL_FetchInt(hndl, 1);
+                    ig_real[client][HX_BOOMER]   = SQL_FetchInt(hndl, 2);
+                    ig_real[client][HX_CHARGER]  = SQL_FetchInt(hndl, 3);
+                    ig_real[client][HX_HUNTER]   = SQL_FetchInt(hndl, 4);
+                    ig_real[client][HX_INFECTED] = SQL_FetchInt(hndl, 5);
+                    ig_real[client][HX_JOCKEY]   = SQL_FetchInt(hndl, 6);
+                    ig_real[client][HX_SMOKER]   = SQL_FetchInt(hndl, 7);
+                    ig_real[client][HX_SPITTER]  = SQL_FetchInt(hndl, 8);
+                    ig_real[client][HX_TANK]     = SQL_FetchInt(hndl, 9);
+                    ig_real[client][HX_WITCH]    = SQL_FetchInt(hndl, 10);
 
-                    sg_query1[0] = '\0';
-                    Format(sg_query1, sizeof(sg_query1) - 1, "INSERT OR IGNORE INTO l4d2_stats (Steamid, Name) VALUES ('%s', '');", sTeamID);
-                    SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0);
+                    CreateTimer(7.0, HxTimerConnected, data, TIMER_FLAG_NO_MAPCHANGE);
+                }
+                else
+                {
+                    if (hg_db)
+                    {
+                        char sTeamID[HX_32_SIZE];
+                        GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID) - 1);
+
+                        sg_query1[0] = '\0';
+                        Format(sg_query1, sizeof(sg_query1) - 1, "INSERT OR IGNORE INTO l4d2_stats (Steamid, Name) VALUES ('%s', '');", sTeamID);
+                        SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0);
+                    }
                 }
             }
         }
@@ -246,7 +249,7 @@ public Action HxTimerClientPost(Handle timer, any userid)
  FROM l4d2_stats WHERE Steamid = '%s';",
                        sTeamID);
 
-                SQL_TQuery(hg_db, HxSQLregisterClient, sg_query1, client, DBPrio_High);
+                SQL_TQuery(hg_db, HxSQLregisterClient, sg_query1, userid, DBPrio_High);
             }
         }
     }
