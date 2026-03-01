@@ -1,9 +1,10 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
-//error_reporting(E_ALL);
-//ini_set('display_errors', 1);
-//ini_set('display_startup_errors', 1);
+// declare(strict_types=1);
+// error_reporting(E_ALL);
+// ini_set('display_errors', '1');
+// ini_set('display_startup_errors', '1');
 
 class L4D2ServerQuery
 {
@@ -151,47 +152,39 @@ class L4D2ServerQuery
 
             $dedicated = $response[++$offset];
             switch ($dedicated) {
-                case 'd':
-                {
+                case 'd': {
                     $Server['Dedicated'] = 'dedicated';
                     break;
                 }
-                case 'l':
-                {
+                case 'l': {
                     $Server['Dedicated'] = 'listen';
                     break;
                 }
-                case 'p':
-                {
+                case 'p': {
                     $Server['Dedicated'] = 'SourceTV';
                     break;
                 }
-                default:
-                {
+                default: {
                     $Server['Dedicated'] = 'unknown';
                 }
             }
 
             $os = $response[++$offset];
             switch ($os) {
-                case 'l':
-                {
+                case 'l': {
                     $Server['Os'] = 'linux';
                     break;
                 }
-                case 'w':
-                {
+                case 'w': {
                     $Server['Os'] = 'windows';
                     break;
                 }
                 case 'm':
-                case 'o':
-                {
+                case 'o': {
                     $Server['Os'] = 'mac';
                     break;
                 }
-                default:
-                {
+                default: {
                     $Server['Os'] = 'unknown';
                 }
             }
