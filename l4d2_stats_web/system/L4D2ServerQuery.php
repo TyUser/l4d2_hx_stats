@@ -275,7 +275,7 @@ class L4D2ServerQuery
                 $offset++;
                 $Player['Name'] = $this->readString($response, $offset);
                 $Player['Frags'] = unpack('l', substr($response, $offset, 4))[1];
-                $Player['Time'] = round(unpack('g', substr($response, $offset += 4, 4))[1]);
+                $Player['Time'] = (int)round(unpack('g', substr($response, $offset += 4, 4))[1]);
                 $Player['TimeF'] = gmdate(($Player['Time'] > 3600 ? 'H:i:s' : 'i:s'), $Player['Time']);
 
                 $Players[] = $Player;
