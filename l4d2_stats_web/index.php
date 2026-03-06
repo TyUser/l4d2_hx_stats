@@ -133,11 +133,11 @@ if ($search !== '') {
         }
 
         if (!empty($aBuf5) && isset($aBuf5[0])) {
-            if ($isSteamID == 1) {
-                $player = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . $utils->convertSteamId($aBuf5[0]['Steamid']) . '">' . htmlspecialchars($aBuf5[0]['Name']) . '</a></th><th scope="col"></th></tr></thead><tbody>';
-            }
-            else if ($isSteamID == 2) {
+            if ($isSteamID == 2) {
                 $player = '<table class="table"><thead><tr><th scope="col">Player: ' . htmlspecialchars($aBuf5[0]['Name']) . '</th><th scope="col"></th></tr></thead><tbody>';
+            }
+            else {
+                $player = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . $utils->convertSteamId($aBuf5[0]['Steamid']) . '">' . htmlspecialchars($aBuf5[0]['Name']) . '</a></th><th scope="col"></th></tr></thead><tbody>';
             }
 
             $player .= '<tr><td>Points: </td><td>' . (int)$aBuf5[0]['Points'] . '</td></tr>';
