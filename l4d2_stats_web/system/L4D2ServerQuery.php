@@ -64,6 +64,9 @@ class L4D2ServerQuery
 
         // Получаем номер вызова
         $response = fread($fp, 4096);
+            if ($response === false) {
+                return "";
+            }
 
         // Проверка номера вызова
         if (str_starts_with($response, "\xFF\xFF\xFF\xFF\x41")) {
@@ -74,6 +77,9 @@ class L4D2ServerQuery
 
             // Получаем ответ
             $response = fread($fp, 4096);
+            if ($response === false) {
+                return "";
+            }
 
             // Проверяем ответ
             if (str_starts_with($response, "\xFF\xFF\xFF\xFF\x49")) {
@@ -91,6 +97,9 @@ class L4D2ServerQuery
 
         // Получаем номер вызова
         $response = fread($fp, 4096);
+        if ($response === false) {
+            return "";
+        }
 
         // Проверка номера вызова
         if (str_starts_with($response, "\xFF\xFF\xFF\xFF\x41")) {
@@ -101,6 +110,9 @@ class L4D2ServerQuery
 
             // Получаем ответ
             $response = fread($fp, 4096);
+            if ($response === false) {
+                return "";
+            }
 
             // Проверяем ответ
             if (str_starts_with($response, "\xFF\xFF\xFF\xFF\x44")) {
