@@ -44,8 +44,8 @@ class HxUtils
             return '';
         }
 
-        $authServer = (int)$matches[1];
-        $accountId = (int)$matches[2];
+        $authServer = (int) $matches[1];
+        $accountId = (int) $matches[2];
 
         $steamId64 = ($accountId * 2) + 0x0110000100000000 + $authServer;
         return 'https://steamcommunity.com/profiles/' . $steamId64;
@@ -76,7 +76,7 @@ class hxDatabase
             $this->mysqli = new mysqli($host, $user, $pass, $db);
             $this->mysqli->set_charset('utf8mb4');
         } catch (mysqli_sql_exception $e) {
-            throw new RuntimeException("Connection failed: " . $e->getMessage(), (int)$e->getCode());
+            throw new RuntimeException("Connection failed: " . $e->getMessage(), (int) $e->getCode());
         }
     }
 

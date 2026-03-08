@@ -64,9 +64,9 @@ class L4D2ServerQuery
 
         // Получаем номер вызова
         $response = fread($fp, 4096);
-            if ($response === false) {
-                return "";
-            }
+        if ($response === false) {
+            return "";
+        }
 
         // Проверка номера вызова
         if (str_starts_with($response, "\xFF\xFF\xFF\xFF\x41")) {
@@ -243,8 +243,7 @@ class L4D2ServerQuery
                     if ($Server['AppID'] == 2400) {
                         $Server['GameID'] = unpack('P', substr($response, $offset, 8))[1];
                         $offset += 8;
-                    }
-                    else {
+                    } else {
                         $Server['GameID'] = unpack('V', substr($response, $offset, 4))[1];
                         $offset += 4;
                     }
@@ -287,7 +286,7 @@ class L4D2ServerQuery
                 $offset++;
                 $Player['Name'] = $this->readString($response, $offset);
                 $Player['Frags'] = unpack('l', substr($response, $offset, 4))[1];
-                $Player['Time'] = (int)round(unpack('g', substr($response, $offset += 4, 4))[1]);
+                $Player['Time'] = (int) round(unpack('g', substr($response, $offset += 4, 4))[1]);
                 $Player['TimeF'] = gmdate(($Player['Time'] > 3600 ? 'H:i:s' : 'i:s'), $Player['Time']);
 
                 $Players[] = $Player;
