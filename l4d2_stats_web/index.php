@@ -173,45 +173,45 @@ $html = <<<HTML
 <!doctype html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="description" content="">
-	<title>$serverName</title>
-	<link rel="stylesheet" href="bootstrap.min.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>$serverName</title>
+    <link rel="stylesheet" href="bootstrap.min.css">
 </head>
 <body>
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-	<div class="container">
-		<a class="navbar-brand" href="steam://connect/$config->ip_l4d2:$config->port_l4d2">
-			<span class="text-white">Connect -> $config->ip_l4d2:$config->port_l4d2</span>
-		</a>
-	</div>
+    <div class="container">
+        <a class="navbar-brand" href="steam://connect/$config->ip_l4d2:$config->port_l4d2">
+            <span class="text-white">Connect -> $config->ip_l4d2:$config->port_l4d2</span>
+        </a>
+    </div>
 </nav>
 <br>
 <br>
 <br>
 <div class="container">
-	<h2 style="text-align: center;">$serverName</h2>
-	<h5 style="text-align: center;">$mapName</h5>
-	<br>
-	<form action="index.php" method="get" style="text-align: center;">
-		<input type="search" size="21" name="f" placeholder="STEAM_ID or player name" maxlength="23">
-		<button type="submit">Go</button>
-	</form>
-	<br>
-	<div class="row">
-		<div class="col">
-			$sg_top50_players
-		</div>
+    <h2 style="text-align: center;">$serverName</h2>
+    <h5 style="text-align: center;">$mapName</h5>
+    <br>
+    <form action="index.php" method="get" style="text-align: center;">
+        <input type="search" size="21" name="f" placeholder="STEAM_ID or player name" maxlength="23">
+        <button type="submit">Go</button>
+    </form>
+    <br>
+    <div class="row">
+        <div class="col">
+            $sg_top50_players
+        </div>
 
-		<div class="col">
-			$sg_server_players
-			<br>
-			$sg_search_player
-		</div>
-	</div>
-	<br>
-	<br>
+        <div class="col">
+            $sg_server_players
+            <br>
+            $sg_search_player
+        </div>
+    </div>
+    <br>
+    <br>
 </div>
 </body>
 </html>
