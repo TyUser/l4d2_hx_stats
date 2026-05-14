@@ -84,7 +84,7 @@ class hxDatabase
 
     public function __construct(string $host, string $user, string $pass, string $db)
     {
-        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        mysqli_report(MYSQLI_REPORT_ERROR);
         try {
             $this->mysqli = new mysqli($host, $user, $pass, $db);
             $this->mysqli->set_charset('utf8mb4');
@@ -128,6 +128,10 @@ class hxDatabase
 
     private function getParamType(mixed $value): string
     {
+        if (is_null($value)) {
+            return 's';
+        }
+
         if (is_int($value) || is_bool($value)) {
             return 'i';
         }
@@ -216,8 +220,8 @@ class Cache
             return null;
         }
 
-        if ($times < 5) {
-            $times = 5;
+        if ($times < 10) {
+            $times = 10;
         }
 
         $path = self::CACHE_DIR . md5($filename);

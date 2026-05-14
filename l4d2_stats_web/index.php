@@ -79,7 +79,7 @@ if ($sg_server_players === null) {
             if (!empty($a)) {
                 $sBuf3 .= '<tr>';
                 $sName = $utils->sanitizeString($a['Name']);
-                if ($sName) {
+                if ($sName !== '') {
                     $aBuf4 = $sql->query("SELECT `Steamid` FROM `l4d2_stats` WHERE `Name` = ? ORDER BY `Time2` DESC LIMIT 1;", [$sName]);
 
                     if (!empty($aBuf4[0]["Steamid"])) {
