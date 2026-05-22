@@ -7,7 +7,7 @@
 // ini_set('display_startup_errors', '1');
 
 if (!defined('HX_STATS')) {
-    exit();
+    exit('Direct access protection');
 }
 
 class AppConfig
