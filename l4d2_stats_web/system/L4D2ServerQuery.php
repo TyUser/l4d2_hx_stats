@@ -19,11 +19,11 @@ class L4D2ServerQuery
     public function __construct(string $ip, int $port = 27015)
     {
         if ($port < 1 || $port > 65535) {
-            throw new RuntimeException("Invalid port number: $port. Port must be between 1 and 65535");
+            throw new RuntimeException('Invalid port number: ' . $port . '. Port must be between 1 and 65535');
         }
 
         if (!$this->validateIpv4($ip)) {
-            throw new RuntimeException("Invalid IPv4 address: $ip");
+            throw new RuntimeException('Invalid IPv4 address: ' . $ip);
         }
 
         $this->ip = $ip;
@@ -48,7 +48,7 @@ class L4D2ServerQuery
         $fp = @fsockopen("udp://" . $this->ip, $this->port, $errno, $errstr, 2);
 
         if (!$fp) {
-            throw new RuntimeException("Connection failed: $errstr (Code: $errno)");
+            throw new RuntimeException('Connection failed: ' . $errstr. ' (Code: ' . $errno . ')');
         }
 
         stream_set_timeout($fp, 2);
