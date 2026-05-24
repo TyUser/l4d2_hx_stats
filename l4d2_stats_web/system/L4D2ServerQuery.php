@@ -1,10 +1,8 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
-// declare(strict_types=1);
-// error_reporting(E_ALL);
-// ini_set('display_errors', '1');
-// ini_set('display_startup_errors', '1');
+declare(strict_types=1);
+error_reporting(E_ALL);
 
 class L4D2ServerQuery
 {
@@ -45,7 +43,7 @@ class L4D2ServerQuery
 
     private function connect()
     {
-        $fp = @fsockopen("udp://" . $this->ip, $this->port, $errno, $errstr, 2);
+        $fp = @fsockopen("udp://" . $this->ip, $this->port, $errno, $errstr, 2.0);
 
         if (!$fp) {
             throw new RuntimeException('Connection failed: ' . $errstr. ' (Code: ' . $errno . ')');

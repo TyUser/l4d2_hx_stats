@@ -1,10 +1,8 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-only
 
-// declare(strict_types=1);
-// error_reporting(E_ALL);
-// ini_set('display_errors', '1');
-// ini_set('display_startup_errors', '1');
+declare(strict_types=1);
+error_reporting(E_ALL);
 
 if (!defined('HX_STATS')) {
     exit('Direct access protection');
