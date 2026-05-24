@@ -45,13 +45,13 @@ class L4D2ServerQuery
 
     private function connect()
     {
-        $fp = @fsockopen("udp://" . $this->ip, $this->port, $errno, $errstr, 3);
+        $fp = @fsockopen("udp://" . $this->ip, $this->port, $errno, $errstr, 2);
 
         if (!$fp) {
             throw new RuntimeException("Connection failed: $errstr (Code: $errno)");
         }
 
-        stream_set_timeout($fp, 3);
+        stream_set_timeout($fp, 2);
         stream_set_blocking($fp, true);
         return $fp;
     }
