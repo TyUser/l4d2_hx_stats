@@ -27,8 +27,8 @@ if ($serverInfo2 === null) {
     $cache->set_array('cache_player_list2', $players2);
 }
 
-$serverName = $serverInfo2["HostName"] ?? '';
-$mapName = $serverInfo2["Map"] ?? '';
+$serverName = htmlspecialchars($serverInfo2["HostName"] ?? '', ENT_QUOTES, 'UTF-8');
+$mapName = htmlspecialchars($serverInfo2["Map"] ?? '', ENT_QUOTES, 'UTF-8');
 
 $playersTable = '<table class="table"><thead><tr>' . '<th scope="col">Players ' . $serverInfo2["Players"] . '/' . $serverInfo2["MaxPlayers"] . '</th>' . '<th scope="col">Frags</th>' . '<th scope="col">Time in game</th>' . '</tr></thead><tbody>';
 
