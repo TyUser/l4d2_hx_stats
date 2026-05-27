@@ -27,12 +27,15 @@ class HxUtils
             return '';
         }
 
-        $short = substr($name, 0, 256);
-        if (!mb_check_encoding($short , 'UTF-8')) {
+        if (strlen($name) > 64) {
             return '';
         }
 
-        $sBuf = preg_replace('/[^\p{L}\p{N}:_\-.\s]/u', ' ', $short);
+        if (!mb_check_encoding($name , 'UTF-8')) {
+            return '';
+        }
+
+        $sBuf = preg_replace('/[^\p{L}\p{N}:_\-.\s]/u', ' ', $name);
         if ($sBuf === null) {
             return '';
         }
