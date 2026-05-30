@@ -175,7 +175,7 @@ class Cache
     public function __construct()
     {
         if (!file_exists(self::CACHE_DIR)) {
-            mkdir(self::CACHE_DIR, 0755, true);
+            mkdir(self::CACHE_DIR, 0750, true);
         }
 
         // Автоматическая очистка кэша с вероятностью 5%
