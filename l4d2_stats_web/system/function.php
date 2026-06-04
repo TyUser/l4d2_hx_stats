@@ -31,7 +31,7 @@ class HxUtils
             return '';
         }
 
-        if (!mb_check_encoding($name , 'UTF-8')) {
+        if (!mb_check_encoding($name, 'UTF-8')) {
             return '';
         }
 
@@ -136,6 +136,7 @@ class hxDatabase
         if (is_int($value) || is_bool($value)) {
             return 'i';
         }
+
         if (is_float($value)) {
             return 'd';
         }
@@ -171,6 +172,8 @@ class hxDatabase
 class Cache
 {
     private const CACHE_DIR = __DIR__ . '/temp/';
+    private const MIN_TTL = 10;
+    private const MAX_TTL = 86400;
 
     public function __construct()
     {
@@ -184,10 +187,9 @@ class Cache
         }
     }
 
-    public function cleanExpired(int $maxLifetime = 86400): void
+    public function cleanExpired(): void
     {
         $files = glob(self::CACHE_DIR . '*');
-        $now = time();
 
         if ($files === false) {
             return;
@@ -199,43 +201,70 @@ class Cache
             }
 
             $lastModified = filemtime($file);
-            if ($now - $lastModified > $maxLifetime) {
+            if ($lastModified === false) {
+                continue;
+            }
+
+            if (time() - $lastModified > self::MAX_TTL) {
                 unlink($file);
             }
         }
     }
 
-    public function get_array(string $filename, int $times = 10): ?array
+    public function get_array(string $filename, int $times): ?array
     {
         $data = $this->get_string($filename, $times);
         if ($data === null) {
             return null;
         }
 
-        return json_decode($data, true) ?: null;
-    }
-
-    public function get_string(string $filename, int $times = 10): ?string
-    {
-        if ($filename === '') {
-            return null;
-        }
-
-        if ($times < 10) {
-            $times = 10;
-        }
-
-        $path = self::CACHE_DIR . md5($filename);
-        if (file_exists($path) && (time() - filemtime($path)) < $times) {
-            return file_get_contents($path) ?: null;
+        $decoded = json_decode($data, true);
+        if (is_array($decoded)) {
+            return $decoded;
         }
 
         return null;
     }
 
-    public function set_array(string $filename, array $data): void
+    public function get_string(string $filename, int $times): ?string
     {
-        if ($data === []) {
+        if ($filename === '') {
+            return null;
+        }
+
+        if ($times < self::MIN_TTL) {
+            $times = self::MIN_TTL;
+        }
+
+        if ($times > self::MAX_TTL) {
+            $times = self::MAX_TTL;
+        }
+
+        $path = self::CACHE_DIR . md5($filename);
+        if (!file_exists($path)) {
+            return null;
+        }
+
+        $lastModified = filemtime($path);
+        if ($lastModified === false) {
+            return null;
+        }
+
+        if ((time() - $lastModified) > $times) {
+            return null;
+        }
+
+        $content = file_get_contents($path);
+        if ($content === false) {
+            return null;
+        }
+
+        return $content;
+    }
+
+    public function set_array(string $filename, ?array $data): void
+    {
+        if ($data === null) {
             return;
         }
 
@@ -247,13 +276,13 @@ class Cache
         $this->set_string($filename, $json);
     }
 
-    public function set_string(string $filename, string $data): void
+    public function set_string(string $filename, ?string $data): void
     {
         if ($filename === '') {
             return;
         }
 
-        if ($data === '') {
+        if ($data === null) {
             return;
         }
 
