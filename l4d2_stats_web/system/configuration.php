@@ -11,10 +11,10 @@ if (!defined('HX_STATS')) {
 class AppConfig
 {
     // Настройки базы данных
-    public string $host = 'localhost';              // This is normally set to localhost
-    public string $user = '';                       // Database username
-    public string $password = '';                   // Database password
-    public string $database = '';                   // Database name
+    public string $host = 'localhost';  // This is normally set to localhost
+    public string $user = '';           // Database username
+    public string $password = '';       // Database password
+    public string $database = '';       // Database name
 
     // Настройки сервера
     public int $cache_time = 10;

@@ -12,7 +12,12 @@ require __DIR__ . '/system/L4D2ServerQuery.php';
 $cache = new Cache();
 $utils = new HxUtils();
 $config = new AppConfig();
-$sql = new hxDatabase($config->host, $config->user, $config->password, $config->database);
+
+try {
+    $sql = new hxDatabase($config->host, $config->user, $config->password, $config->database);
+} catch (\Throwable $e) {
+    exit('Database connection failed');
+}
 
 $search = $utils->sanitizeGetParameter('f');
 

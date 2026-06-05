@@ -143,7 +143,6 @@ class L4D2ServerQuery
         $Server['Os'] = '';
         $Server['Password'] = 0;
         $Server['Secure'] = 0;
-
         $Server['Version'] = '';
         $Server['GameID'] = 0;
         $Server['SteamID'] = 0;
