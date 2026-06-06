@@ -27,7 +27,7 @@ class HxUtils
             return '';
         }
 
-        if (strlen($name) > 64) {
+        if (mb_strlen($name, 'UTF-8') > 64) {
             return '';
         }
 
@@ -50,7 +50,7 @@ class HxUtils
 
     public function convertSteamId(string $steamId): string
     {
-        if (!preg_match('/^STEAM_[0-5]:([0-1]):(\d+)$/', $steamId, $matches)) {
+        if (!preg_match('/^STEAM_[0-5]:([0-1]):(\d{1,10})$/', $steamId, $matches)) {
             return '';
         }
 
@@ -67,11 +67,11 @@ class HxUtils
             return 0;
         }
 
-        if (preg_match('/^STEAM_\d+:\d+:\d+$/', $steamId)) {
+        if (preg_match('/^STEAM_[0-5]:[0-1]:\d{1,10}$/', $steamId)) {
             return 1;
         }
 
-        if (preg_match('/^STEAM_old_\d+:\d+:\d+$/', $steamId)) {
+        if (preg_match('/^STEAM_old_[0-5]:[0-1]:\d{1,10}$/', $steamId)) {
             return 2;
         }
 
@@ -90,7 +90,8 @@ class hxDatabase
             $this->mysqli = new mysqli($host, $user, $pass, $db);
             $this->mysqli->set_charset('utf8mb4');
         } catch (mysqli_sql_exception $e) {
-            throw new RuntimeException('Connection failed: ' . (int)$e->getCode());
+            error_log('Database connection failed: ' . $e->getMessage());
+            throw new RuntimeException('Connection failed');
         }
     }
 
