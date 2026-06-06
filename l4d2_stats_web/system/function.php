@@ -208,15 +208,15 @@ class Cache
             }
 
             $age = time() - $lastModified;
-            if ($fileCount > 500) {
-                if ($age > self::MIN_TTL * 20) {
+            if ($age > self::MIN_TTL * 20) {
+                if ($fileCount > 500) {
                     unlink($file);
                     continue;
                 }
-            }
 
-            if ($age > self::MAX_TTL) {
-                unlink($file);
+                if ($age > self::MAX_TTL) {
+                    unlink($file);
+                }
             }
         }
     }
