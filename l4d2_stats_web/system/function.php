@@ -196,6 +196,7 @@ class Cache
             return;
         }
 
+        $fileCount = count($files);
         foreach ($files as $file) {
             if (!is_file($file)) {
                 continue;
@@ -206,7 +207,15 @@ class Cache
                 continue;
             }
 
-            if (time() - $lastModified > self::MAX_TTL) {
+            $age = time() - $lastModified;
+            if ($fileCount > 500) {
+                if ($age > self::MIN_TTL * 20) {
+                    unlink($file);
+                    continue;
+                }
+            }
+
+            if ($age > self::MAX_TTL) {
                 unlink($file);
             }
         }
