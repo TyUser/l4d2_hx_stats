@@ -15,7 +15,7 @@ $config = new AppConfig();
 
 try {
     $sql = new hxDatabase($config->host, $config->user, $config->password, $config->database);
-} catch (\Throwable $e) {
+} catch (Throwable $e) {
     exit('Database connection failed');
 }
 

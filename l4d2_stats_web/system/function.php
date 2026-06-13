@@ -97,7 +97,16 @@ class hxDatabase
 
     public function query(string $query, array $params = []): array|int
     {
-        $stmt = $this->mysqli->prepare($query);
+        if ($query === '') {
+            return 0;
+        }
+
+        try {
+            $stmt = $this->mysqli->prepare($query);
+        } catch (Throwable $e) {
+            error_log('Prepare failed: ' . $e->getMessage());
+            return 0;
+        }
 
         if ($stmt === false) {
             return 0;
