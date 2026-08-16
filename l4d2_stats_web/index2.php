@@ -17,20 +17,25 @@ $serverInfo2 = $cache->get_array('cache_server_info2', $config->cache_time);
 $players2 = $cache->get_array('cache_player_list2', $config->cache_time);
 
 // Если кэша нет то подключаемся к L4D2ServerQuery и обновляем кэш
-if ($serverInfo2 === null) {
-    $query = new L4D2ServerQuery($config->ip_l4d2, $config->port_l4d2);
+if ($serverInfo2 === null || $players2 === null) {
+    try {
+        $query = new L4D2ServerQuery($config->ip_l4d2, $config->port_l4d2);
 
-    $serverInfo2 = $query->getServerInfo();
-    $players2 = $query->getPlayerList();
+        $serverInfo2 = $query->getServerInfo();
+        $players2 = $query->getPlayerList();
 
-    $cache->set_array('cache_server_info2', $serverInfo2);
-    $cache->set_array('cache_player_list2', $players2);
+        $cache->set_array('cache_server_info2', $serverInfo2);
+        $cache->set_array('cache_player_list2', $players2);
+    } catch (Throwable $e) {
+        $serverInfo2 = $serverInfo ?? [];
+        $players2 = $players ?? [];
+    }
 }
 
 $serverName = htmlspecialchars($serverInfo2["HostName"] ?? '', ENT_QUOTES, 'UTF-8');
 $mapName = htmlspecialchars($serverInfo2["Map"] ?? '', ENT_QUOTES, 'UTF-8');
 
-$playersTable = '<table class="table"><thead><tr>' . '<th scope="col">Players ' . $serverInfo2["Players"] . '/' . $serverInfo2["MaxPlayers"] . '</th>' . '<th scope="col">Frags</th>' . '<th scope="col">Time in game</th>' . '</tr></thead><tbody>';
+$playersTable = '<table class="table"><thead><tr>' . '<th scope="col">Players ' . (int)($serverInfo2['Players'] ?? 0) . '/' . (int)($serverInfo2['MaxPlayers'] ?? 0) . '</th>' . '<th scope="col">Frags</th>' . '<th scope="col">Time in game</th>' . '</tr></thead><tbody>';
 
 if (!empty($players2)) {
     foreach ($players2 as $player) {
@@ -38,7 +43,7 @@ if (!empty($players2)) {
             continue;
         }
 
-        $name = htmlspecialchars($player['Name'], ENT_QUOTES, 'UTF-8');
+        $name = htmlspecialchars($player['Name'] ?? '', ENT_QUOTES, 'UTF-8');
         $name = $name ?: 'Anonymous';
 
         $playersTable .= '<tr>' . '<td>' . $name . '</td>' . '<td>' . (int)$player['Frags'] . '</td>' . '<td>' . $player['TimeF'] . '</td>' . '</tr>';

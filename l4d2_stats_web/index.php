@@ -28,14 +28,19 @@ $serverInfo = $cache->get_array('cache_server_info', $config->cache_time);
 $players = $cache->get_array('cache_player_list', $config->cache_time);
 
 // Если кэша нет то подключаемся к L4D2ServerQuery и обновляем кэш
-if ($serverInfo === null) {
-    $query = new L4D2ServerQuery($config->ip_l4d2, $config->port_l4d2);
+if ($serverInfo === null || $players === null) {
+    try {
+        $query = new L4D2ServerQuery($config->ip_l4d2, $config->port_l4d2);
 
-    $serverInfo = $query->getServerInfo();
-    $players = $query->getPlayerList();
+        $serverInfo = $query->getServerInfo();
+        $players = $query->getPlayerList();
 
-    $cache->set_array('cache_server_info', $serverInfo);
-    $cache->set_array('cache_player_list', $players);
+        $cache->set_array('cache_server_info', $serverInfo);
+        $cache->set_array('cache_player_list', $players);
+    } catch (Throwable $e) {
+        $serverInfo = $serverInfo ?? [];
+        $players = $players ?? [];
+    }
 }
 
 $serverName = htmlspecialchars($serverInfo["HostName"] ?? '', ENT_QUOTES, 'UTF-8');
@@ -75,7 +80,6 @@ $sg_server_players = $cache->get_string('cache_players', $config->cache_time);
 if ($sg_server_players === null) {
     $sBuf3 = '';
     $sName = '';
-    $processedPlayers = 0;
 
     if (!empty($players)) {
         foreach ($players as $a) {
@@ -99,8 +103,6 @@ if ($sg_server_players === null) {
                 $sBuf3 .= '<td>' . (int)$a['Frags'] . '</td>';
                 $sBuf3 .= '<td>' . $a['TimeF'] . '</td>';
                 $sBuf3 .= '</tr>';
-
-                $processedPlayers += 1;
             }
         }
     }
@@ -113,9 +115,7 @@ if ($sg_server_players === null) {
     $sg_server_players .= '</tbody></table>';
     unset($sBuf3, $sName);
 
-    if ($processedPlayers > 0) {
-        $cache->set_string('cache_players', $sg_server_players);
-    }
+    $cache->set_string('cache_players', $sg_server_players);
 }
 
 // Проверяем поиск
@@ -139,7 +139,7 @@ if ($search !== '') {
             $safePlayerName = htmlspecialchars($aBuf5[0]['Name'] ?? '', ENT_QUOTES, 'UTF-8');
 
             if ($safeSteamId) {
-                $playerHtml = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" href="' . $safeSteamId . '">' . $safePlayerName . '&nbsp;</a></th><th scope="col"></th></tr></thead><tbody>';
+                $playerHtml = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" rel="noopener noreferrer" href="' . $safeSteamId . '">' . $safePlayerName . '&nbsp;</a></th><th scope="col"></th></tr></thead><tbody>';
             }
             else {
                 $playerHtml = '<table class="table"><thead><tr><th scope="col">Player: ' . $safePlayerName . '</th><th scope="col"></th></tr></thead><tbody>';

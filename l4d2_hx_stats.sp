@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `l4d2_stats` (\
  `Name` tinyblob NOT NULL,\
  `Points` int(11) NOT NULL DEFAULT '0',\
  `Time1` int(11) NOT NULL DEFAULT '0',\
- `Time2` int(11) NOT NULL DEFAULT '0',\
+ `Time2` bigint NOT NULL DEFAULT '0',\
  `Boomer` int(11) NOT NULL DEFAULT '0',\
  `Charger` int(11) NOT NULL DEFAULT '0',\
  `Hunter` int(11) NOT NULL DEFAULT '0',\
@@ -69,7 +69,7 @@ public Plugin myinfo =
     name        = "[L4D2] hx_stats",
     author      = "MAKS",
     description = "L4D2 Coop Stats",
-    version     = "1.6",
+    version     = "1.6.1",
     url         = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -229,6 +229,10 @@ public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, a
                         SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0, DBPrio_Low);
                     }
                 }
+            }
+            else
+            {
+                LogError("SQL Error: %s", error);
             }
         }
     }
@@ -680,6 +684,10 @@ public Action CMD_callvote(int client, int args)
     if (ig_real[client][HX_POINTS] > 500)
     {
         return Plugin_Continue;
+    }
+    else
+    {
+        PrintToChat(client, "Need 500+ points to vote");
     }
 
     if (GetUserFlagBits(client) & ADMFLAG_ROOT)

@@ -70,7 +70,7 @@ public Plugin myinfo =
     name        = "[L4D2] hx_stats",
     author      = "MAKS",
     description = "L4D2 Coop Stats",
-    version     = "1.6 SQLite",
+    version     = "1.6.1 SQLite",
     url         = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -219,6 +219,10 @@ public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, a
                         SQL_TQuery(hg_db, HxDBvoid, sg_query1, 0, DBPrio_Low);
                     }
                 }
+            }
+            else
+            {
+                LogError("SQL Error: %s", error);
             }
         }
     }
@@ -656,6 +660,10 @@ public Action CMD_callvote(int client, int args)
     if (ig_real[client][HX_POINTS] > 500)
     {
         return Plugin_Continue;
+    }
+    else
+    {
+        PrintToChat(client, "Need 500+ points to vote");
     }
 
     if (GetUserFlagBits(client) & ADMFLAG_ROOT)

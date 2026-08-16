@@ -121,7 +121,13 @@ class hxDatabase
             $stmt->bind_param($types, ...$params);
         }
 
-        $stmt->execute();
+        try {
+            $stmt->execute();
+        } catch (Throwable $e) {
+            error_log('Execute failed: ' . $e->getMessage());
+            $stmt->close();
+            return 0;
+        }
         $result = $stmt->get_result();
 
         if ($result === false) {
