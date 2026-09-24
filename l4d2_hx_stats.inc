@@ -4,16 +4,20 @@
 #define _l4d2_hx_stats_included
 
 /**
- * Get the player's points
+ * Retrieves the total points of a specific player.
  *
- * @param client        Client index. From 1 to MaxClients
- * @return              Number of points
- */
+ * @note Returns 0 for fake clients (bots) or if the client is not fully loaded.
+ *
+ * @param client        Client index (1 to MaxClients).
+ * @return              The number of points, or 0 if the client is invalid or a bot.
+*/
 native int HxGetClientPoints(int client);
 
 /**
- * Get the average skill of the team
+ * Retrieves the calculated average skill level of the current team.
  *
- * @return              Value from 1 to 10
- */
+ * @note The value is updated dynamically during the round based on players' points.
+ *
+ * @return              An integer value representing average skill ranging from 1 to 10.
+*/
 native int HxGetAverageSkill();

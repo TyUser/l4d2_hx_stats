@@ -2,8 +2,8 @@
 /**
  *
  * Copyright 2011 - 2026 steamcommunity.com/profiles/76561198025355822/
- * native int HxGetClientPoints(int client); // Получить поинты игрока
- * native int HxGetAverageSkill(); // Получить усредненные skill команды
+ * native int HxGetClientPoints(int client); // Получить очки игрока
+ * native int HxGetAverageSkill(); // Получить усредненный навык команды
  * Статистика игроков.
  *
  */
@@ -28,6 +28,7 @@
 #define HX_32_SIZE      32
 #define HX_64_SIZE      64
 #define HX_128_SIZE     128
+#define HX_512_SIZE     512
 #define HX_1024_SIZE    1024
 
 #define HX_CREATE_TABLE "\
@@ -55,7 +56,7 @@ char sg_query2[HX_1024_SIZE];
 char sg_query3[HX_1024_SIZE];
 char sg_query4[HX_1024_SIZE];
 
-char sg_buf1[HX_1024_SIZE];
+char sg_buf1[HX_512_SIZE];
 char sg_buf2[HX_128_SIZE];
 char sg_buf3[HX_128_SIZE];
 
@@ -69,8 +70,8 @@ public Plugin myinfo =
 {
     name        = "[L4D2] hx_stats",
     author      = "MAKS",
-    description = "L4D2 Coop Stats",
-    version     = "1.6.1 SQLite",
+    description = "Player stats for L4D2 Co-op",
+    version     = "1.6.2 SQLite",
     url         = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -102,7 +103,7 @@ public void HxDBvoid(Handle owner, Handle hndl, const char[] error, any data)
 {
     if (!hndl)
     {
-        LogError("SQL Error: %s", error);
+        LogError("SQL query failed: %s", error);
     }
 }
 
@@ -119,7 +120,7 @@ public void OnConfigsExecuted()
 
     if (!hg_db)
     {
-        LogError("Failed to connect to database 'l4d2_stats'. Error: %s", sg_buf2);
+        LogError("Database connection failed for 'l4d2_stats': %s", sg_buf2);
     }
     else
     {
@@ -222,7 +223,7 @@ public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, a
             }
             else
             {
-                LogError("SQL Error: %s", error);
+                LogError("SQL error while loading stats for client %d: %s", client, error);
             }
         }
     }
@@ -427,11 +428,11 @@ public void Event_DefibrillatorUsed(Event event, const char[] name, bool dontBro
 
 public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
-    int iAttacker = GetClientOfUserId(event.GetInt("attacker")); /* User ID который убил */
+    int iAttacker = GetClientOfUserId(event.GetInt("attacker")); /* UserID который убил */
 
     if (iAttacker)
     {
-        int iUserid = GetClientOfUserId(event.GetInt("userid")); /* User ID который умер */
+        int iUserid = GetClientOfUserId(event.GetInt("userid")); /* UserID который умер */
 
         if (iAttacker != iUserid)
         {
@@ -663,7 +664,7 @@ public Action CMD_callvote(int client, int args)
     }
     else
     {
-        PrintToChat(client, "Need 500+ points to vote");
+        PrintToChat(client, "You need 500+ points to vote");
     }
 
     if (GetUserFlagBits(client) & ADMFLAG_ROOT)
