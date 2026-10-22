@@ -70,7 +70,7 @@ public Plugin myinfo =
     name        = "[L4D2] hx_stats",
     author      = "MAKS",
     description = "Player stats for L4D2 Co-op",
-    version     = "1.6.2",
+    version     = "1.6.3",
     url         = "https://forums.alliedmods.net/showthread.php?t=298535"
 };
 
@@ -233,7 +233,7 @@ public void HxSQLregisterClient(Handle owner, Handle hndl, const char[] error, a
             }
             else
             {
-                LogError("SQL error while loading stats for client %d: %s", client, error);
+                LogError("SQL error loading stats for client %d: %s", client, error);
             }
         }
     }
@@ -662,12 +662,12 @@ public Action CMD_keyboard(int client, int args)
         return Plugin_Continue;
     }
 
-    if (ig_real[client][HX_POINTS] > 50)
+    if (GetUserFlagBits(client) & ADMFLAG_ROOT)
     {
         return Plugin_Continue;
     }
 
-    if (GetUserFlagBits(client) & ADMFLAG_ROOT)
+    if (ig_real[client][HX_POINTS] >= 50)
     {
         return Plugin_Continue;
     }
@@ -682,18 +682,18 @@ public Action CMD_callvote(int client, int args)
         return Plugin_Continue;
     }
 
-    if (ig_real[client][HX_POINTS] > 500)
+    if (GetUserFlagBits(client) & ADMFLAG_ROOT)
+    {
+        return Plugin_Continue;
+    }
+
+    if (ig_real[client][HX_POINTS] >= 500)
     {
         return Plugin_Continue;
     }
     else
     {
         PrintToChat(client, "You need 500+ points to vote");
-    }
-
-    if (GetUserFlagBits(client) & ADMFLAG_ROOT)
-    {
-        return Plugin_Continue;
     }
 
     return Plugin_Handled;
@@ -746,52 +746,58 @@ public Action CMD_rank(int client, int args)
     return Plugin_Handled;
 }
 
-public Action CMD_top(int client, int args)
+public void HxSQLTopClient(Handle owner, Handle hndl, const char[] error, any data)
 {
-    char sBuffer[HX_128_SIZE];
+    char sLine[HX_128_SIZE];
     char sName[HX_64_SIZE];
 
     int iPoints = 0;
     int iNum = 0;
 
+    int client = GetClientOfUserId(data);
+    if (client > 0)
+    {
+        if (IsClientInGame(client))
+        {
+            Panel hPanel = new Panel();
+            hPanel.SetTitle("Top players");
+
+            if (hndl)
+            {
+                while (SQL_FetchRow(hndl))
+                {
+                    SQL_FetchString(hndl, 0, sName, sizeof(sName) - 1);
+                    iPoints = SQL_FetchInt(hndl, 1);
+
+                    iNum += 1;
+                    Format(sLine, sizeof(sLine) - 1, "%d. %s %d Points", iNum, sName, iPoints);
+                    hPanel.DrawText(sLine);
+                }
+            }
+            else
+            {
+                LogError("SQL error loading top players: %s", error);
+            }
+
+            hPanel.DrawItem("Close");
+            hPanel.Send(client, RankPanelHandler, 20);
+            delete hPanel;
+        }
+    }
+}
+
+public Action CMD_top(int client, int args)
+{
     if (client > 0)
     {
         if (IsClientInGame(client))
         {
             if (hg_db)
             {
-                Panel hPanel = new Panel();
-                hPanel.SetTitle("Top players");
-
                 sg_query4[0] = '\0';
                 Format(sg_query4, sizeof(sg_query4) - 1, "SELECT `Name`, `Points` FROM `l4d2_stats` WHERE `Points` > 0 ORDER BY `Points` DESC LIMIT 15;");
 
-                SQL_LockDatabase(hg_db);
-                DBResultSet hQuery = SQL_Query(hg_db, sg_query4);
-
-                if (hQuery)
-                {
-                    while (hQuery.FetchRow())
-                    {
-                        sName[0]   = '\0';
-                        sBuffer[0] = '\0';
-
-                        hQuery.FetchString(0, sName, sizeof(sName) - 8);
-                        iPoints = hQuery.FetchInt(1);
-
-                        iNum += 1;
-                        Format(sBuffer, sizeof(sBuffer) - 1, "%d. %s  %d Points", iNum, sName, iPoints);
-                        hPanel.DrawText(sBuffer);
-                    }
-
-                    delete hQuery;
-                }
-
-                SQL_UnlockDatabase(hg_db);
-
-                hPanel.DrawItem("Close");
-                hPanel.Send(client, RankPanelHandler, 20);
-                delete hPanel;
+                SQL_TQuery(hg_db, HxSQLTopClient, sg_query4, GetClientUserId(client), DBPrio_Low);
             }
         }
     }
