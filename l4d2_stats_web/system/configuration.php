@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 declare(strict_types=1);
+ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
 if (!defined('HX_STATS')) {
+    http_response_code(403);
     exit('Direct access protection');
 }
 

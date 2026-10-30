@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 declare(strict_types=1);
+ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
 if (!defined('HX_STATS')) {
+    http_response_code(403);
     exit('Direct access protection');
 }
 
@@ -189,7 +191,7 @@ class Cache
 {
     private const CACHE_DIR = __DIR__ . '/temp/';
     private const MIN_TTL = 10;
-    private const MAX_TTL = 86400;
+    private const MAX_TTL = 604800;
 
     public function __construct()
     {
@@ -197,8 +199,8 @@ class Cache
             mkdir(self::CACHE_DIR, 0750, true);
         }
 
-        // Автоматическая очистка кэша с вероятностью 5%
-        if (mt_rand(1, 100) <= 5) {
+        // Автоматическая очистка кэша с вероятностью 1%
+        if (mt_rand(1, 100) <= 1) {
             $this->cleanExpired();
         }
     }

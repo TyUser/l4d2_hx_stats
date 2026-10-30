@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 declare(strict_types=1);
+ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
 const HX_STATS = true;
@@ -91,12 +92,10 @@ if ($sg_server_players === null) {
 
                     if (!empty($aBuf4[0]["Steamid"])) {
                         $sBuf3 .= '<td><a href="index.php?f=' . $aBuf4[0]["Steamid"] . '" class="link-dark">' . htmlspecialchars($sName, ENT_QUOTES, 'UTF-8') . '</a></td>';
-                    }
-                    else {
+                    } else {
                         $sBuf3 .= '<td>' . htmlspecialchars($sName, ENT_QUOTES, 'UTF-8') . '</td>';
                     }
-                }
-                else {
+                } else {
                     $sBuf3 .= '<td>Anonymous</td>';
                 }
 
@@ -128,8 +127,7 @@ if ($search !== '') {
 
         if ($utils->validateSteamIdFormat($search) > 0) {
             $aBuf5 = $sql->query("SELECT * FROM `l4d2_stats` WHERE `Steamid` = ?;", [$search]);
-        }
-        else {
+        } else {
             $searchTerm = "%" . $search . "%";
             $aBuf5 = $sql->query("SELECT * FROM `l4d2_stats` WHERE `Name` LIKE ? ORDER BY `Time2` DESC LIMIT 1;", [$searchTerm]);
         }
@@ -140,8 +138,7 @@ if ($search !== '') {
 
             if ($safeSteamId) {
                 $playerHtml = '<table class="table"><thead><tr><th scope="col">Player: <a class="link-dark" target="_blank" rel="noopener noreferrer" href="' . $safeSteamId . '">' . $safePlayerName . '&nbsp;</a></th><th scope="col"></th></tr></thead><tbody>';
-            }
-            else {
+            } else {
                 $playerHtml = '<table class="table"><thead><tr><th scope="col">Player: ' . $safePlayerName . '</th><th scope="col"></th></tr></thead><tbody>';
             }
 
@@ -161,16 +158,14 @@ if ($search !== '') {
             $playerHtml .= '<tr><td>Total game time: </td><td>' . $iTimeAll . ' (hour..)</td></tr>';
             $playerHtml .= '<tr><td>Last visit: </td><td>' . date('d.m.Y', (int)$aBuf5[0]['Time2']) . '</td></tr>';
             $playerHtml .= '</tbody></table>';
-        }
-        else {
+        } else {
             $playerHtml = '<table class="table"><thead><tr><th scope="col">Player: ';
             $safeSteamId = $utils->convertSteamId($search);
             $safeSearchName = htmlspecialchars($search, ENT_QUOTES, 'UTF-8');
 
             if ($safeSteamId) {
                 $playerHtml .= '<a class="link-dark" target="_blank" href="' . $safeSteamId . '">' . $safeSearchName . '</a>';
-            }
-            else {
+            } else {
                 $playerHtml .= ' Not found';
             }
 
